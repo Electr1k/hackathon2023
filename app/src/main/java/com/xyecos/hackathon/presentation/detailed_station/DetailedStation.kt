@@ -1,4 +1,4 @@
-package com.xyecos.hackathon.detailed_station
+package com.xyecos.hackathon.presentation.detailed_station
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,11 +14,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.xyecos.hackathon.common.TopAppBar
-import com.xyecos.hackathon.stations.common.StationCard
+import com.xyecos.hackathon.data.ServerApi
+import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.common.TopAppBar
+import com.xyecos.hackathon.presentation.stations.common.StationCard
 
 @Composable
 fun DetailedStationScreen(
+    api: ServerApi = ApiModule.provideApi(),
     id: Int,
     title: String,
     popBack: () -> Unit

@@ -1,4 +1,4 @@
-package com.xyecos.hackathon.splash
+package com.xyecos.hackathon.presentation.splash
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearOutSlowInEasing

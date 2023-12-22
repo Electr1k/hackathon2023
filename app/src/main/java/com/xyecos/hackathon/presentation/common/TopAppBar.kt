@@ -1,4 +1,4 @@
-package com.xyecos.hackathon.common
+package com.xyecos.hackathon.presentation.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

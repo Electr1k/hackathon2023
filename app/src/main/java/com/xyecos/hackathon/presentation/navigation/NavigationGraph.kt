@@ -1,4 +1,4 @@
-package com.xyecos.hackathon.navigation
+package com.xyecos.hackathon.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -6,12 +6,15 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.xyecos.hackathon.detailed_station.DetailedStationScreen
-import com.xyecos.hackathon.splash.SplashScreen
-import com.xyecos.hackathon.stations.StationsScreen
+import com.xyecos.hackathon.data.ServerApi
+import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.detailed_station.DetailedStationScreen
+import com.xyecos.hackathon.presentation.splash.SplashScreen
+import com.xyecos.hackathon.presentation.stations.StationsScreen
 
 @Composable
 fun NavigationGraph(
+    api: ServerApi = ApiModule.provideApi(),
     navController: NavHostController,
 ) {
 
@@ -50,6 +53,7 @@ fun NavigationGraph(
             route = Screen.Stations.route
         ) {
             StationsScreen(
+                api = api,
                 navigateToStationById = { id, title ->
                     navigateByRoute(
                         Screen.DetailedStation.route.replace("{$ID}", id.toString()).replace("{$TITLE}", title),
@@ -70,6 +74,7 @@ fun NavigationGraph(
             backStackEntry ->
             backStackEntry.arguments?.getInt(ID)
             DetailedStationScreen(
+                api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
                 title = backStackEntry.arguments?.getString(TITLE) ?: "",
                 popBack = { popBackStack() }

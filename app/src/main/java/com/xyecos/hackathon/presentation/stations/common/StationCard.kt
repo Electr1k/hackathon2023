@@ -1,4 +1,4 @@
-package com.xyecos.hackathon.stations.common
+package com.xyecos.hackathon.presentation.stations.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -27,7 +27,7 @@ import com.xyecos.hackathon.ui.theme.Gray
 
 @Composable
 fun StationCard(
-    title: String,
+    title: String? ,
     onClick: () -> Unit
 ){
     Card(
@@ -43,15 +43,28 @@ fun StationCard(
         ),
         border = BorderStroke(3.dp, Gray)
     ) {
-        Text(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 18.dp),
-            textAlign = TextAlign.Center,
-            text = title,
-            fontWeight = W500,
-            fontSize = 22.sp,
-        )
+        if (title != null) {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 18.dp),
+                textAlign = TextAlign.Center,
+                text = title!!,
+                fontWeight = W500,
+                fontSize = 22.sp,
+            )
+        }else{
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Gray)
+                    .padding(vertical = 18.dp),
+                textAlign = TextAlign.Center,
+                text = "",
+                fontWeight = W500,
+                fontSize = 22.sp,
+            )
+        }
     }
 }
 
