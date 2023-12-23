@@ -10,11 +10,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.SaveableStateRegistry
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,10 +24,8 @@ import com.xyecos.hackathon.data.dto.Station
 import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.common.TopAppBar
 import com.xyecos.hackathon.presentation.stations.common.StationCard
-import okhttp3.internal.http.RequestLine.get
-import javax.inject.Inject
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
 @Composable
 fun StationsScreen(
     api: ServerApi = ApiModule.provideApi(),
@@ -38,12 +35,14 @@ fun StationsScreen(
     var stations: Resource<List<Station>> by remember{
         mutableStateOf(Resource.Loading())
     }
-
+    val scope = rememberCoroutineScope()
     LaunchedEffect(true){
-        try {
-            stations = Resource.Success(api.getStations())
-        } catch (e: Exception) {
-            stations = Resource.Error(e.message ?: "loading stations error")
+        if (stations is Resource.Loading) {
+            try {
+                stations = Resource.Success(api.getStations())
+            } catch (e: Exception) {
+                stations = Resource.Error(e.message ?: "loading stations error")
+            }
         }
     }
 
@@ -85,7 +84,6 @@ fun StationsScreen(
                         )
                     }
                 }
-
                 else -> {}
             }
         }

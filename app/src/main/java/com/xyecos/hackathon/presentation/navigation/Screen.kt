@@ -13,5 +13,8 @@ enum class Screen(
     ),
     Splash(
         route = "splash"
-    )
+    ),
+    Park(
+        route = "park/{$ID}",
+    ),
 }

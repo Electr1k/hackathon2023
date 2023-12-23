@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.park.ParkScreen
 import com.xyecos.hackathon.presentation.detailed_station.DetailedStationScreen
 import com.xyecos.hackathon.presentation.splash.SplashScreen
 import com.xyecos.hackathon.presentation.stations.StationsScreen
@@ -72,11 +73,29 @@ fun NavigationGraph(
             )
         ){
             backStackEntry ->
-            backStackEntry.arguments?.getInt(ID)
             DetailedStationScreen(
                 api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
                 title = backStackEntry.arguments?.getString(TITLE) ?: "",
+                navigationToPark = {id -> navigateByRoute(
+                    Screen.Park.route.replace("{$ID}", id.toString()),
+                    null
+                )},
+                popBack = { popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Park.route,
+            arguments = listOf(
+                navArgument(ID) { type = NavType.IntType },
+            )
+        ){
+            backStackEntry ->
+            ParkScreen(
+                api = api,
+                id = backStackEntry.arguments?.getInt(ID) ?: -1,
+                navigationToPark = {},
                 popBack = { popBackStack() }
             )
         }
