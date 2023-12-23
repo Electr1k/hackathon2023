@@ -1,7 +1,11 @@
 package com.xyecos.hackathon.presentation.way
 
+import android.R
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,15 +16,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,33 +52,48 @@ import com.xyecos.hackathon.presentation.stations.common.CustomBox
 import com.xyecos.hackathon.presentation.way.locomotives.LocomotiveBox
 import com.xyecos.hackathon.presentation.way.wagons.Direction
 import com.xyecos.hackathon.presentation.way.wagons.WagonButton
-import com.xyecos.hackathon.ui.theme.mainBlue
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("CoroutineCreationDuringComposition", "UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("CoroutineCreationDuringComposition", "UnusedMaterial3ScaffoldPaddingParameter",
+    "MutableCollectionMutableState", "UnrememberedMutableState"
+)
 @Composable
 fun WayScreen(
     api: ServerApi = ApiModule.provideApi(),
     id: Int,
     popBack: () -> Unit
 ){
-    val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
-    var showBottomSheet by remember { mutableStateOf(false) }
+
+
+    // Нижний лист для информации о вагоне
+    val infoSheetState = rememberModalBottomSheetState()
+
+    // Нижний лист для перегона вагонов
+    val bottomSheetState = rememberStandardBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        skipHiddenState = false
+    )
+    val moveSheetState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
 
     scope.launch {
-        sheetState.hide()
+        infoSheetState.hide()
+        moveSheetState.bottomSheetState.hide()
     }
 
-    var selectedList = remember {
-        mutableListOf<Int>()
-    }
-
+    // Установлен ли режим выбора вагонов
     var isSelectionMode by remember {
         mutableStateOf(false)
     }
 
+    // Выбранные вагоны
+    val selectedList = remember { mutableStateListOf<Int>()}
+
+
+    // Вагон, информация о котором будет в нижнем листе
     var pickWagon by remember{
         mutableStateOf<Wagon?>(null)
     }
@@ -77,9 +102,12 @@ fun WayScreen(
         mutableStateOf(Resource.Loading())
     }
 
-
-
+    val visible = remember {
+        mutableStateOf(false)
+    }
+    // Запрос к пути
     LaunchedEffect(true){
+        visible.value = true
         if (way is Resource.Loading) {
             way = try {
                 Resource.Success(api.getWay(id))
@@ -87,44 +115,19 @@ fun WayScreen(
                 Resource.Error(e.message ?: "loading stations error")
             }
         }
+
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = { com.xyecos.hackathon.presentation.common.TopAppBar((way as? Resource.Success)?.data?.name ?: "")}) {
-        if (sheetState.isVisible) {
-            ModalBottomSheet(
-                containerColor = Color(0XFFFCB53B),
-                contentColor = Color.White,
-                sheetState = sheetState,
-                onDismissRequest = {
-                    scope.launch {
-                        sheetState.hide()
-                    }
-                },
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                ) {
-                    if (pickWagon != null) {
-                        Text(
-                            text = "Вагон № ${pickWagon!!.inventoryNumber}",
-                            fontSize = 18.sp,
-                            fontWeight = W500
-                        )
-                        Text(
-                            text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
-                            fontSize = 18.sp,
-                            fontWeight = W500)
-                        Text(
-                            text = "Собственник № ${pickWagon!!.owner}",
-                            fontSize = 18.sp,
-                            fontWeight = W500)
-                        Spacer(modifier = Modifier.height(25.dp))
-                    }
-                }
-            }
+        if (infoSheetState.isVisible) {
+            InfoModalBottomSheet(scope = scope, infoSheetState = infoSheetState, pickWagon = pickWagon)
         }
+
+        if (moveSheetState.bottomSheetState.isVisible) {
+            MoveModalBottomSheet(scope = scope, moveSheetState = moveSheetState, selectedList = selectedList)
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -135,61 +138,80 @@ fun WayScreen(
         ) {
             when (way){
                 is Resource.Success -> {
+                    // Рисуем локомотивы, который находятся слева
                     items((way as Resource.Success<Way>).data.locomotives){
                         if (it.direction == Direction.LEFT){
                             LocomotiveBox()
                         }
                     }
+                    // Рисуем вагоны
+                    
                     items((way as Resource.Success<Way>).data.wagonsIds){
-                        var wagon: Resource<Wagon> by remember{
-                            mutableStateOf(Resource.Loading())
-                        }
-                        LaunchedEffect(key1 = true){
-                            try{
-                                wagon = Resource.Success(api.getWagon(it))
+                            var wagon: Resource<Wagon> by remember {
+                                mutableStateOf(Resource.Loading())
                             }
-                            catch (e: Exception){
-                                wagon = Resource.Error("")
+                        LaunchedEffect(key1 = true) {
+                            wagon = try {
+                                Resource.Success(api.getWagon(it))
+                            } catch (e: Exception) {
+                                Resource.Error("")
                             }
                         }
-                        if (wagon is Resource.Success){
+                        if (wagon is Resource.Success) {
                             val checkedState = remember { mutableStateOf(false) }
-                            WagonButton(
-                                wagon = (wagon as Resource.Success<Wagon>).data,
-                                onClick = {
-
-                                    if (!isSelectionMode) {
-                                        pickWagon = ((wagon as Resource.Success<Wagon>).data)
-                                        showBottomSheet = !showBottomSheet
-                                        scope.launch {
-                                            sheetState.show()
-                                        }
-                                    }
-                                    else{
-                                        if ((wagon as Resource.Success<Wagon>).data.id in selectedList){
-                                            selectedList.remove((wagon as Resource.Success<Wagon>).data.id)
-                                            checkedState.value = false
-                                            if (selectedList.size == 0) isSelectionMode = false
-                                        }
-                                        else{
-                                            selectedList.add((wagon as Resource.Success<Wagon>).data.id)
-                                            checkedState.value = true
-                                        }
-                                    }
-                                    println(selectedList)
-                                },
-                                onLongClick = {
-                                    println("Лонг клик")
-                                    isSelectionMode = true
-                                    selectedList.add((wagon as Resource.Success<Wagon>).data.id)
-                                    checkedState.value = true
-                                },
-                                isChecked = checkedState.value,
-                                isSelectionMode = isSelectionMode,
-                                onChangeCheck = {}
+                            AnimatedVisibility(
+                                visible = visible.value,
+                                enter = slideInVertically(
+                                    animationSpec = tween(
+                                        durationMillis = 2000,
+                                        easing = LinearOutSlowInEasing
+                                    ),
+                                    initialOffsetY = { it }
                             )
+                            ) {
+                                WagonButton(
+                                    wagon = (wagon as Resource.Success<Wagon>).data,
+                                    onClick = {
+
+                                        if (!isSelectionMode) {
+                                            pickWagon = ((wagon as Resource.Success<Wagon>).data)
+                                            scope.launch {
+                                                infoSheetState.show()
+                                            }
+                                        } else {
+                                            if ((wagon as Resource.Success<Wagon>).data.id in selectedList) {
+                                                selectedList.remove((wagon as Resource.Success<Wagon>).data.id)
+                                                checkedState.value = false
+                                                if (selectedList.size == 0) {
+                                                    isSelectionMode = false
+                                                    scope.launch {
+                                                        moveSheetState.bottomSheetState.hide()
+                                                    }
+                                                }
+                                            } else {
+                                                selectedList.add((wagon as Resource.Success<Wagon>).data.id)
+                                                checkedState.value = true
+                                            }
+                                        }
+                                        println(selectedList)
+                                    },
+                                    onLongClick = {
+                                        println("Лонг клик")
+                                        isSelectionMode = true
+                                        selectedList.add((wagon as Resource.Success<Wagon>).data.id)
+                                        checkedState.value = true
+                                        scope.launch {
+                                            moveSheetState.bottomSheetState.expand()
+                                        }
+                                    },
+                                    isChecked = checkedState.value,
+                                    isSelectionMode = isSelectionMode,
+                                    onChangeCheck = { }
+                                )
+                        }
                         }
                     }
+                    // Рисуем локомотивы, который находятся слева
                     items((way as Resource.Success<Way>).data.locomotives){
                         if (it.direction == Direction.RIGHT){
                             LocomotiveBox()
@@ -213,5 +235,81 @@ fun WayScreen(
                 else -> {}
             }
         }
+    }
+}
+
+
+/**
+ * param [scope] - coroutineScope
+ * param [infoSheetState] - state for this bottom sheet
+ * pickWagon - selected Wagon
+* */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable()
+fun InfoModalBottomSheet(
+    scope: CoroutineScope,
+    infoSheetState: SheetState,
+    pickWagon: Wagon?,
+){
+    ModalBottomSheet(
+        containerColor = Color(0XFFFCB53B),
+        contentColor = Color.White,
+        sheetState = infoSheetState,
+        onDismissRequest = {
+            scope.launch {
+                infoSheetState.hide()
+            }
+        },
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+        ) {
+            if (pickWagon != null) {
+                Text(
+                    text = "Вагон № ${pickWagon!!.inventoryNumber}",
+                    fontSize = 18.sp,
+                    fontWeight = W500
+                )
+                Text(
+                    text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
+                    fontSize = 18.sp,
+                    fontWeight = W500)
+                Text(
+                    text = "Собственник № ${pickWagon!!.owner}",
+                    fontSize = 18.sp,
+                    fontWeight = W500)
+                Spacer(modifier = Modifier.height(25.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable()
+fun MoveModalBottomSheet(
+    scope: CoroutineScope,
+    moveSheetState: BottomSheetScaffoldState,
+    selectedList: MutableList<Int>,
+){
+    BottomSheetScaffold(
+        containerColor = Color(0XFFFCB53B),
+        contentColor = Color.White,
+        scaffoldState = moveSheetState,
+        sheetContent = {
+
+            Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+        ) {
+                Text(
+                text = "Количество ${selectedList.size}",
+                fontSize = 18.sp,
+                fontWeight = W500
+            )
+        }}
+
+    ) {
+
     }
 }
