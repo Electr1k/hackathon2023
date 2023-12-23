@@ -27,7 +27,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xyecos.hackathon.R
-import com.xyecos.hackathon.ui.theme.HackathonTheme
 import com.xyecos.hackathon.ui.theme.mainBlue
 import com.xyecos.hackathon.ui.theme.medium
 import com.xyecos.hackathon.ui.theme.separator
@@ -107,10 +106,8 @@ enum class InputType {
 @Preview
 @Composable
 fun LoginFormInputFieldPreview() {
-    HackathonTheme {
-        LoginFormInputField(
-            inputType = InputType.PASSWORD,
-            hint = "E-mail",
-        )
-    }
+    LoginFormInputField(
+        inputType = InputType.PASSWORD,
+        hint = "E-mail",
+    )
 }

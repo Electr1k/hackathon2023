@@ -29,15 +29,7 @@ fun MainLoginScreenContent(
     Column(modifier = modifier
         .fillMaxSize()
         .paint(painterResource(id = R.drawable.logo), contentScale = ContentScale. Crop)) {
-//        Icon(
-//            modifier = Modifier
-//                .padding(horizontal = 32.dp, vertical = 32.dp)
-//                .fillMaxWidth()
-//                .aspectRatio(5f / 3f)
-//                .weight(1f),
-//            painter = painterResource(id = R.drawable.logo),
-//            contentDescription = "",
-//        )
+
         Spacer(modifier = Modifier.weight(1f))
 
         Box(modifier = Modifier.weight(2f)) {

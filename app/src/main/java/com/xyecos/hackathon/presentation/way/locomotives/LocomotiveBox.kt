@@ -13,9 +13,11 @@ import com.xyecos.hackathon.R
 import com.xyecos.hackathon.ui.theme.Locomotive
 
 @Composable
-fun LocomotiveBox(){
+fun LocomotiveBox(
+    modifier: Modifier = Modifier
+){
    Box(
-       modifier = Modifier
+       modifier = modifier
            .size(72.dp)
            .border(2.dp, Locomotive),
        contentAlignment = Alignment.Center

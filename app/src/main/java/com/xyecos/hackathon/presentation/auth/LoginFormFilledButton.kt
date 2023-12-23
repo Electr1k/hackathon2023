@@ -8,14 +8,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.xyecos.hackathon.ui.theme.HackathonTheme
 import com.xyecos.hackathon.ui.theme.bold
-import com.xyecos.hackathon.ui.theme.mainBlue
 
 @Composable
 fun LoginFormFilledButton(
@@ -29,7 +28,7 @@ fun LoginFormFilledButton(
             .fillMaxWidth()
             .height(50.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = mainBlue
+            containerColor = Color(0xfff57f29)
         ),
         shape = RoundedCornerShape(4.dp)
     ) {
@@ -48,7 +47,5 @@ fun LoginFormFilledButton(
 @Preview
 @Composable
 fun LoginFormButtonPreview() {
-    HackathonTheme {
         LoginFormFilledButton()
-    }
 }
