@@ -17,4 +17,7 @@ enum class Screen(
     Park(
         route = "park/{$ID}",
     ),
+    Way(
+        route = "way/{$ID}"
+    )
 }

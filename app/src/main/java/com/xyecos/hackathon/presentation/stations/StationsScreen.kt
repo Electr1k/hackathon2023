@@ -23,7 +23,7 @@ import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Station
 import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.common.TopAppBar
-import com.xyecos.hackathon.presentation.stations.common.StationCard
+import com.xyecos.hackathon.presentation.stations.common.CustomBox
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
 @Composable
@@ -59,7 +59,10 @@ fun StationsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = padding.calculateTopPadding(),
+                    top = 30.dp + padding.calculateTopPadding(),
+                    start = 30.dp,
+                    end = 30.dp,
+                    bottom = 30.dp
                 ),
             contentPadding = PaddingValues(top = 14.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -69,8 +72,8 @@ fun StationsScreen(
             when (stations){
                 is Resource.Success -> {
                     items((stations as Resource.Success<List<Station>>).data) { station ->
-                        StationCard(
-                            title = station.title,
+                        CustomBox(
+                            text = station.title,
                             onClick = { navigateToStationById(station.id, station.title) }
                         )
                     }
@@ -78,8 +81,8 @@ fun StationsScreen(
                 is Resource.Loading -> {
                     println("Загрузка")
                     items(3) {
-                        StationCard(
-                            title = null,
+                        CustomBox(
+                            text = null,
                             onClick = {}
                         )
                     }

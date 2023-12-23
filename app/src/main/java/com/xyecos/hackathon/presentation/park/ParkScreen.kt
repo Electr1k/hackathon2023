@@ -15,7 +15,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,15 +29,14 @@ import com.xyecos.hackathon.data.dto.Park
 import com.xyecos.hackathon.data.dto.Way
 import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.common.TopAppBar
-import com.xyecos.hackathon.presentation.stations.common.StationCard
-import kotlinx.coroutines.launch
+import com.xyecos.hackathon.presentation.stations.common.CustomBox
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ParkScreen(
     api: ServerApi = ApiModule.provideApi(),
     id: Int,
-    navigationToPark: (id: Int) -> Unit,
+    navigationToWay: (id: Int) -> Unit,
     popBack: () -> Unit
 ){
     var park: Resource<Park> by remember{
@@ -65,7 +63,10 @@ fun ParkScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = padding.calculateTopPadding(),
+                    top = 30.dp + padding.calculateTopPadding(),
+                    start = 30.dp,
+                    end = 30.dp,
+                    bottom = 30.dp
                 ),
             contentPadding = PaddingValues(top = 14.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -95,14 +96,14 @@ fun ParkScreen(
                         }
 
                         if (way is Resource.Success) {
-                            StationCard(
-                                title = (way as Resource.Success<Way>).data.name,
-                                onClick = {}
+                            CustomBox(
+                                text = (way as Resource.Success<Way>).data.name,
+                                onClick = {navigationToWay((way as Resource.Success<Way>).data.id)}
                             )
                         }
                         else{
-                            StationCard(
-                                title = null,
+                            CustomBox(
+                                text = null,
                                 onClick = {}
                             )
                         }
@@ -111,8 +112,8 @@ fun ParkScreen(
                 is Resource.Loading -> {
                     println("Загрузка")
                     items(3) {
-                        StationCard(
-                            title = null,
+                        CustomBox(
+                            text = null,
                             onClick = {}
                         )
                     }

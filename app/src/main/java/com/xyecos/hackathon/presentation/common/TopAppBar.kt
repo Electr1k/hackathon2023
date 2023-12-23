@@ -61,12 +61,12 @@ fun TopAppBar(
                     )
             }
         }
-        Divider(color = Color.Gray, thickness = 2.dp)
+        Divider(color = Color(0xFF0B2C62), thickness = 2.dp)
     }
 }
 
 @Composable
 @Preview
-fun previewAppBarr(){
+fun previewAppBar(){
     TopAppBar("AppBar")
 }

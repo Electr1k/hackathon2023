@@ -1,5 +1,7 @@
 package com.xyecos.hackathon.data.dto
 
+import com.xyecos.hackathon.presentation.way.wagons.Direction
+
 data class Way(
     val id: Int,
     val parkId: Int,
@@ -14,5 +16,5 @@ data class Way(
 data class Locomotive(
     val id: Int,
     val inventoryNumber: String,
-    val direction: String
+    val direction: Direction
 )

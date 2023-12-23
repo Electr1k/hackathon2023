@@ -1,9 +1,7 @@
 package com.xyecos.hackathon.presentation.detailed_station
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,13 +15,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,12 +26,10 @@ import androidx.compose.ui.unit.sp
 import com.xyecos.hackathon.data.Resource
 import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Park
-import com.xyecos.hackathon.data.dto.Station
 import com.xyecos.hackathon.data.dto.StationById
 import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.common.TopAppBar
-import com.xyecos.hackathon.presentation.stations.common.StationCard
-import kotlinx.coroutines.launch
+import com.xyecos.hackathon.presentation.stations.common.CustomBox
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
@@ -72,7 +65,10 @@ fun DetailedStationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = padding.calculateTopPadding(),
+                    top = 30.dp + padding.calculateTopPadding(),
+                    start = 30.dp,
+                    end = 30.dp,
+                    bottom = 30.dp
                 ),
             contentPadding = PaddingValues(top = 14.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -105,14 +101,14 @@ fun DetailedStationScreen(
 
                         }
                         if (park is Resource.Success) {
-                            StationCard(
-                                title = (park as Resource.Success<Park>).data.name,
+                            CustomBox(
+                                text = (park as Resource.Success<Park>).data.name,
                                 onClick = { navigationToPark(it) }
                             )
                         }
                         else{
-                            StationCard(
-                                title = null,
+                            CustomBox(
+                                text = null,
                                 onClick = {}
                             )
                         }
@@ -121,8 +117,8 @@ fun DetailedStationScreen(
                 is Resource.Loading -> {
                     println("Загрузка")
                     items(3) {
-                        StationCard(
-                            title = null,
+                        CustomBox(
+                            text = null,
                             onClick = {}
                         )
                     }

@@ -12,6 +12,7 @@ import com.xyecos.hackathon.presentation.park.ParkScreen
 import com.xyecos.hackathon.presentation.detailed_station.DetailedStationScreen
 import com.xyecos.hackathon.presentation.splash.SplashScreen
 import com.xyecos.hackathon.presentation.stations.StationsScreen
+import com.xyecos.hackathon.presentation.way.WayScreen
 
 @Composable
 fun NavigationGraph(
@@ -95,7 +96,24 @@ fun NavigationGraph(
             ParkScreen(
                 api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
-                navigationToPark = {},
+                navigationToWay = {id -> navigateByRoute(
+                    Screen.Way.route.replace("{$ID}", id.toString()),
+                    null
+                )},
+                popBack = { popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Way.route,
+            arguments = listOf(
+                navArgument(ID) { type = NavType.IntType },
+            )
+        ){
+                backStackEntry ->
+            WayScreen(
+                api = api,
+                id = backStackEntry.arguments?.getInt(ID) ?: -1,
                 popBack = { popBackStack() }
             )
         }
