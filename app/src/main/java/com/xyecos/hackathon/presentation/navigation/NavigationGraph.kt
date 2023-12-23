@@ -128,7 +128,7 @@ fun NavigationGraph(
         }
 
         composable(route = Screen.Login.route){
-            MainLoginScreenContent()
+            MainLoginScreenContent(navigationByRoute = {route -> navigateByRoute(route, null)})
         }
     }
 }
