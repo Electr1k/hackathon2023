@@ -48,16 +48,22 @@ fun WagonButton(
         shape = RoundedCornerShape(4.dp),
         border = BorderStroke(2.dp, getColorForBorder(wagon.owner))
     ) {
-        if (isSelectionMode){
-            Checkbox(modifier = Modifier.align(Alignment.End), checked = isChecked, onCheckedChange = {onChangeCheck(isChecked)})
-        }
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = wagon.inventoryNumber.toUpperCase(),
-                modifier = Modifier,
-                color = Color.Black,
-                textAlign = TextAlign.Center,
-            )
+        Box{
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
+                if (isSelectionMode) {
+                    Checkbox(
+                        checked = isChecked,
+                        onCheckedChange = { onChangeCheck(isChecked) })
+                }
+            }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = wagon.inventoryNumber.toUpperCase(),
+                    modifier = Modifier,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

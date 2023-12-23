@@ -1,29 +1,37 @@
 package com.xyecos.hackathon.presentation.way
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -31,243 +39,299 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight.Companion.W500
 import androidx.compose.ui.text.font.FontWeight.Companion.W600
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xyecos.hackathon.data.Repo
 import com.xyecos.hackathon.data.Resource
 import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Wagon
 import com.xyecos.hackathon.data.dto.Way
 import com.xyecos.hackathon.di.ApiModule
-import com.xyecos.hackathon.presentation.common.ScreenHeader
-import com.xyecos.hackathon.presentation.common.TopBar
-import com.xyecos.hackathon.presentation.stations.common.CustomBox
 import com.xyecos.hackathon.presentation.way.locomotives.LocomotiveBox
 import com.xyecos.hackathon.presentation.way.wagons.Direction
 import com.xyecos.hackathon.presentation.way.wagons.WagonButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("CoroutineCreationDuringComposition", "UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint(
+    "CoroutineCreationDuringComposition", "UnusedMaterial3ScaffoldPaddingParameter",
+    "MutableCollectionMutableState", "UnrememberedMutableState"
+)
 @Composable
 fun WayScreen(
     api: ServerApi = ApiModule.provideApi(),
     id: Int,
-    popBack: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    // Нижний лист для информации о вагоне
+    val infoSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
-    var showBottomSheet by remember { mutableStateOf(false) }
 
-    scope.launch {
-        sheetState.hide()
+    // Нижний лист для перегона вагонов
+    val bottomSheetState = rememberStandardBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        skipHiddenState = false
+    )
+    val moveSheetState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
+
+    var wagons by remember {
+        mutableStateOf(listOf<Wagon>())
     }
 
-    var selectedList = remember {
-        mutableListOf<Int>()
+    var way: Way? by remember {
+        mutableStateOf(null)
     }
 
+    var isLoading by remember {
+        mutableStateOf(true)
+    }
+
+    var isWarning by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(true) {
+        Repo.getWagons().filter { it.wayId == id }.let {
+            wagons = it
+        }
+
+        way = Repo.getWays().find { it.id == id }
+
+        isLoading = false
+    }
+
+    LaunchedEffect(true) {
+        infoSheetState.hide()
+        moveSheetState.bottomSheetState.hide()
+    }
+
+    // Установлен ли режим выбора вагонов
     var isSelectionMode by remember {
         mutableStateOf(false)
     }
 
+    // Выбранные вагоны
+    val selectedIdList =
+        remember { mutableStateListOf<Int>() } // Хранит id, можно было и и объекты класса, но перед запросом нужно бы было создать новый список именно с id
+    val selectedItemList = remember {
+        mutableStateListOf<Wagon>()
+    }
+
+
+    var density = LocalDensity.current
+
+    // Вагон, информация о котором будет в нижнем листе
     var pickWagon by remember {
         mutableStateOf<Wagon?>(null)
     }
 
-    var way: Resource<Way> by remember {
-        mutableStateOf(Resource.Loading())
+    if (infoSheetState.isVisible) {
+        InfoModalBottomSheet(
+            scope = scope,
+            infoSheetState = infoSheetState,
+            pickWagon = pickWagon
+        )
     }
 
-    LaunchedEffect(true) {
-        if (way is Resource.Loading) {
-            way = try {
-                Resource.Success(api.getWay(id))
-            } catch (e: Exception) {
-                Resource.Error(e.message ?: "loading stations error")
+    if (moveSheetState.bottomSheetState.isVisible) {
+        MoveModalBottomSheet(
+            scope = scope,
+            moveSheetState = moveSheetState,
+            selectedList = selectedIdList
+        )
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp),
+        contentPadding = PaddingValues(start = 8.dp, end = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        val wayData = (way as Resource.Success<Way>).data
+        // Рисуем локомотивы, который находятся слева
+        items(wayData.locomotives) {
+            if (it.direction == Direction.LEFT) {
+                LocomotiveBox()
             }
         }
-    }
+        // Рисуем вагоны
 
-    if (sheetState.isVisible) {
-        modalBottomSheet(sheetState, scope, pickWagon)
-    }
-
-    Column {
-        TopBar(extraText = "Путь")
-
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            item {
-                ScreenHeader(
-                    title = ((("Путь " + (way as? Resource.Success)?.data?.name))), {}
-                )
-            }
-
-            when (way) {
-                is Resource.Success -> {
-                    items((way as Resource.Success<Way>).data.locomotives) {
-                        if (it.direction == Direction.LEFT) {
-                            LocomotiveBox(
-                                modifier = Modifier
-                                    .padding(top = 16.dp)
-                                //todo инфо про локомотив
-                            )
-                        }
-                    }
-                    items((way as Resource.Success<Way>).data.wagonsIds) {
-                        var wagon: Resource<Wagon> by remember {
-                            mutableStateOf(Resource.Loading())
-                        }
-                        LaunchedEffect(key1 = true) {
-                            try {
-                                wagon = Resource.Success(api.getWagon(it))
-                            } catch (e: Exception) {
-                                wagon = Resource.Error("")
+        items(wagons) { wagon ->
+            val checkedState = remember { mutableStateOf(false) }
+            AnimatedVisibility(
+                modifier = Modifier.wrapContentSize(),
+                visible = !isLoading,
+                enter = slideInVertically {
+                    // Slide in from 72 dp from the top.
+                    with(density) { -72.dp.roundToPx() }
+                } + expandVertically(
+                    // Expand from the top.
+                    expandFrom = Alignment.Top
+                ) + fadeIn(
+                    // Fade in with the initial alpha of 0.3f.
+                    initialAlpha = 0.3f
+                ),
+                exit = slideOutVertically() + shrinkVertically() + fadeOut()
+            ) {
+                WagonButton(
+                    wagon = wagon,
+                    onClick = {
+                        if (!isSelectionMode) {
+                            pickWagon = wagon
+                            scope.launch {
+                                infoSheetState.show()
+                            }
+                        } else {
+                            if (wagon.id in selectedIdList) {
+                                selectedIdList.remove(wagon.id)
+                                selectedItemList.remove(wagon)
+                                checkedState.value = false
+                                if (selectedIdList.size == 0) {
+                                    isSelectionMode = false
+                                    scope.launch {
+                                        moveSheetState.bottomSheetState.hide()
+                                    }
+                                }
+                            } else {
+                                selectedIdList.add(wagon.id)
+                                selectedItemList.add(wagon)
+                                checkedState.value = true
                             }
                         }
-                        if (wagon is Resource.Success) {
-                            val checkedState = remember { mutableStateOf(false) }
-                            WagonButton(
-                                wagon = (wagon as Resource.Success<Wagon>).data,
-                                onClick = {
-
-                                    if (!isSelectionMode) {
-                                        pickWagon = ((wagon as Resource.Success<Wagon>).data)
-                                        showBottomSheet = !showBottomSheet
-                                        scope.launch {
-                                            sheetState.show()
-                                        }
-                                    } else {
-                                        if ((wagon as Resource.Success<Wagon>).data.id in selectedList) {
-                                            selectedList.remove((wagon as Resource.Success<Wagon>).data.id)
-                                            checkedState.value = false
-                                            if (selectedList.size == 0) isSelectionMode = false
-                                        } else {
-                                            selectedList.add((wagon as Resource.Success<Wagon>).data.id)
-                                            checkedState.value = true
-                                        }
-                                    }
-                                    println(selectedList)
-                                },
-                                onLongClick = {
-                                    isSelectionMode = true
-                                    selectedList.add((wagon as Resource.Success<Wagon>).data.id)
-                                    checkedState.value = true
-                                },
-                                isChecked = checkedState.value,
-                                isSelectionMode = isSelectionMode,
-                                onChangeCheck = {}
-                            )
+                    },
+                    onLongClick = {
+                        isSelectionMode = true
+                        selectedIdList.add(wagon.id)
+                        selectedItemList.add(wagon)
+                        checkedState.value = true
+                        scope.launch {
+                            moveSheetState.bottomSheetState.expand()
+                        }
+                    },
+                    isChecked = checkedState.value,
+                    isSelectionMode = isSelectionMode,
+                    onChangeCheck = {
+                        if (wagon.id in selectedIdList) {
+                            selectedIdList.remove(wagon.id)
+                            checkedState.value = false
+                            if (selectedIdList.size == 0) {
+                                isSelectionMode = false
+                                scope.launch {
+                                    moveSheetState.bottomSheetState.hide()
+                                }
+                            }
+                        } else {
+                            selectedIdList.add(wagon.id)
+                            selectedItemList.add(wagon)
+                            checkedState.value = true
                         }
                     }
-                    items((way as Resource.Success<Way>).data.locomotives) {
-                        if (it.direction == Direction.RIGHT) {
-                            LocomotiveBox()
-                            //todo инфо про локомотив
-                        }
-                    }
-                    if ((way as Resource.Success<Way>).data.wagonsCount + (way as Resource.Success<Way>).data.locomotives.size == 0) {
-                        item {
-                            Text(
-                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                                textAlign = TextAlign.Center,
-                                text = "Путь свободен",
-                                fontSize = 24.sp,
-                                fontWeight = W600,
-                                color = Color(0xFF0B2C62)
-                            )
-                        }
-                    }
-                }
-
-                is Resource.Loading -> {
-                    item {
-                        Text(
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                            text = "Загрузка...",
-                            textAlign = TextAlign.Center,
-                            style = TextStyle(fontSize = 22.sp, fontWeight = W500)
-                        )
-                    }
-                }
-
-                else -> {}
+                )
+            }
+        }
+        // Рисуем локомотивы, который находятся слева
+        items(wayData.locomotives) {
+            if (it.direction == Direction.RIGHT) {
+                LocomotiveBox()
+            }
+        }
+        if (wayData.wagonsCount + wayData.locomotives.size == 0) {
+            item {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    text = "Путь свободен",
+                    fontSize = 24.sp,
+                    fontWeight = W600,
+                    color = Color(0xFF0B2C62)
+                )
             }
         }
     }
 }
 
-@Composable
+/**
+ * param [scope] - coroutineScope
+ * param [infoSheetState] - state for this bottom sheet
+ * pickWagon - selected Wagon
+ * */
 @OptIn(ExperimentalMaterial3Api::class)
-private fun modalBottomSheet(
-    sheetState: SheetState,
+@Composable()
+fun InfoModalBottomSheet(
     scope: CoroutineScope,
-    pickWagon: Wagon?
+    infoSheetState: SheetState,
+    pickWagon: Wagon?,
 ) {
     ModalBottomSheet(
-        modifier = Modifier,
-        containerColor = Color.White,
-        sheetState = sheetState,
-        dragHandle = {},
-        windowInsets = WindowInsets(top = 0.dp),
-        shape = RoundedCornerShape(0.dp),
-        scrimColor = Color.Transparent,
-        tonalElevation = 8.dp,
+        containerColor = Color(0XFFFCB53B),
+        contentColor = Color.White,
+        sheetState = infoSheetState,
         onDismissRequest = {
             scope.launch {
-                sheetState.hide()
+                infoSheetState.hide()
             }
         },
     ) {
-        Column() {
-            Box(
-                modifier = Modifier
-                    .background(color = Color(0xfffcb53b))
-                    .fillMaxWidth()
-                    .width(2.dp)
-                    .padding(bottom = 4.dp)
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (pickWagon != null) {
-                    Text(
-                        text = "Вагон № ${pickWagon!!.inventoryNumber}",
-                        fontSize = 18.sp,
-                        fontWeight = W500
-                    )
-                    Text(
-                        text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
-                        fontSize = 18.sp,
-                        fontWeight = W500
-                    )
-                    Text(
-                        text = "Собственник - ${pickWagon!!.owner}",
-                        fontSize = 18.sp,
-                        fontWeight = W500
-                    )
-                    Spacer(modifier = Modifier.height(25.dp))
-                }
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+        ) {
+            if (pickWagon != null) {
+                Text(
+                    text = "Вагон № ${pickWagon!!.inventoryNumber}",
+                    fontSize = 18.sp,
+                    fontWeight = W500
+                )
+                Text(
+                    text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
+                    fontSize = 18.sp,
+                    fontWeight = W500
+                )
+                Text(
+                    text = "Собственник № ${pickWagon!!.owner}",
+                    fontSize = 18.sp,
+                    fontWeight = W500
+                )
+                Spacer(modifier = Modifier.height(25.dp))
             }
         }
     }
 }
 
-@Preview
-@Composable
-fun WayScreen() {
-    WayScreen(id = 1, popBack = {})
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable()
+fun MoveModalBottomSheet(
+    scope: CoroutineScope,
+    moveSheetState: BottomSheetScaffoldState,
+    selectedList: MutableList<Int>,
+) {
+    BottomSheetScaffold(
+        containerColor = Color(0XFFFCB53B),
+        contentColor = Color.White,
+        scaffoldState = moveSheetState,
+        sheetContent = {
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+            ) {
+                Text(
+                    text = "Перемещение вагонов",
+                    fontSize = 18.sp,
+                    fontWeight = W500,
+                    //color = Colors.
+                )
+            }
+        }
+
+    ) {
+
+    }
 }

@@ -8,8 +8,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.auth.MainLoginScreenContent
 import com.xyecos.hackathon.presentation.park.ParkScreen
 import com.xyecos.hackathon.presentation.detailed_station.DetailedStationScreen
+import com.xyecos.hackathon.presentation.map.MapScreen
 import com.xyecos.hackathon.presentation.splash.SplashScreen
 import com.xyecos.hackathon.presentation.stations.StationsScreen
 import com.xyecos.hackathon.presentation.way.WayScreen
@@ -44,7 +46,7 @@ fun NavigationGraph(
 
         composable(route = Screen.Splash.route){
             SplashScreen(openApp = {
-                navigateByRoute(route = Screen.Stations.route,
+                navigateByRoute(route = Screen.Login.route,
                     popUpRoute = Screen.Splash.route,
                     isInclusive = true)
             })
@@ -108,8 +110,18 @@ fun NavigationGraph(
             WayScreen(
                 api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
-                popBack = { popBackStack() }
             )
+        }
+        composable(route = Screen.Map.route){
+            MapScreen(
+                api = api,
+                navigateToStationById = { id ->
+                    navigateByRoute(Screen.DetailedStation.route.replace("{$ID}", id.toString()),
+                        null)})
+        }
+
+        composable(route = Screen.Login.route){
+            MainLoginScreenContent()
         }
     }
 }
