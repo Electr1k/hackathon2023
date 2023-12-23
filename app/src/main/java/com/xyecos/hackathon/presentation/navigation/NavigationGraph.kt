@@ -26,7 +26,6 @@ fun NavigationGraph(
         navController.popBackStack()
     }
 
-
     fun navigateByRoute(
         route: String,
         popUpRoute: String? = null,
@@ -57,7 +56,6 @@ fun NavigationGraph(
             route = Screen.Stations.route
         ) {
             StationsScreen(
-                api = api,
                 navigateToStationById = { id, title ->
                     navigateByRoute(
                         Screen.DetailedStation.route.replace("{$ID}", id.toString()).replace("{$TITLE}", title),
@@ -79,12 +77,10 @@ fun NavigationGraph(
             DetailedStationScreen(
                 api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
-                title = backStackEntry.arguments?.getString(TITLE) ?: "",
                 navigationToPark = {id -> navigateByRoute(
                     Screen.Park.route.replace("{$ID}", id.toString()),
                     null
                 )},
-                popBack = { popBackStack() }
             )
         }
 
@@ -96,13 +92,11 @@ fun NavigationGraph(
         ){
             backStackEntry ->
             ParkScreen(
-                api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
                 navigationToWay = {id -> navigateByRoute(
                     Screen.Way.route.replace("{$ID}", id.toString()),
                     null
                 )},
-                popBack = { popBackStack() }
             )
         }
 
@@ -116,7 +110,6 @@ fun NavigationGraph(
             WayScreen(
                 api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
-                popBack = { popBackStack() }
             )
         }
         composable(route = Screen.Map.route){

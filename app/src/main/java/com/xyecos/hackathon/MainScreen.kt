@@ -13,24 +13,18 @@ import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.navigation.NavigationGraph
 
 @Composable
-fun MainScreen(){
+fun MainScreen() {
     val navController = rememberNavController()
     val api = ApiModule.provideApi()
-    Scaffold(
+
+    Column(
         modifier = Modifier
-            .background(Color.Transparent),
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(
-                    top = padding.calculateTopPadding(),
-                )
-                .fillMaxSize()
-        ) {
-            NavigationGraph(
-                api = api,
-                navController = navController
-            )
-        }
+            .fillMaxSize()
+    ) {
+        NavigationGraph(
+            api = api,
+            navController = navController
+        )
     }
+
 }

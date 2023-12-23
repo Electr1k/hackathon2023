@@ -2,7 +2,6 @@ package com.xyecos.hackathon.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-
 val Gray = Color(0xFFC9C9C9)
 val GrayTopBar = Color(0xFFAFAFAF)
 
