@@ -1,15 +1,12 @@
 package com.xyecos.hackathon.presentation.park
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.xyecos.hackathon.data.Resource
+import com.xyecos.hackathon.data.Repo
 import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Park
 import com.xyecos.hackathon.data.dto.Way
@@ -37,22 +34,29 @@ import com.xyecos.hackathon.presentation.stations.common.CustomBox
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun ParkScreen(
-    api: ServerApi = ApiModule.provideApi(),
     id: Int,
     navigationToWay: (id: Int) -> Unit,
-    popBack: () -> Unit
 ) {
-    var park: Resource<Park> by remember {
-        mutableStateOf(Resource.Loading())
+    var isLoading by remember {
+        mutableStateOf(true)
     }
+
+    var isWarning by remember {
+        mutableStateOf(false)
+    }
+
+    var ways by remember {
+        mutableStateOf(listOf<Way>())
+    }
+
+    var park: Park? by remember {
+        mutableStateOf(null)
+    }
+
     LaunchedEffect(true) {
-        if (park is Resource.Loading) {
-            try {
-                park = Resource.Success(api.getPark(id))
-            } catch (e: Exception) {
-                park = Resource.Error(e.message ?: "loading stations error")
-            }
-        }
+        ways = Repo.getWays().filter { it.parkId == id }
+        park = Repo.getParks().find { it.id == id }
+        isLoading = false
     }
 
     Column {
@@ -61,72 +65,71 @@ fun ParkScreen(
         )
 
         ScreenHeader(
-            title = "Парк",
+            title = "Парк ${park?.name ?: ""}",
             onClick = { },
-            isWarning = false
+            isWarning = isWarning,
+            isLoading = isLoading,
         )
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = 30.dp,
-                    end = 30.dp,
-                ),
+                .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            top = 16.dp,
-                            bottom = 16.dp
-                        ),
-                    text = "Пути",
-                    textAlign = TextAlign.Start,
-                    style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
-                )
-            }
-            when (park) {
-                is Resource.Success -> {
-                    items((park as Resource.Success<Park>).data.waysIds) {
-                        var way: Resource<Way> by remember {
-                            mutableStateOf(Resource.Loading())
-                        }
-                        if (way is Resource.Loading) {
-                            LaunchedEffect(true) {
-                                try {
-                                    way = Resource.Success(api.getWay(it))
-                                } catch (e: Exception) {
-                                    println(e)
-                                }
-                            }
-                        }
-
-                        if (way is Resource.Success) {
-                            CustomBox(
-                                modifier = Modifier.padding(
-                                    bottom = 16.dp,
-                                ),
-                                text = (way as Resource.Success<Way>).data.name,
-                                onClick = { navigationToWay((way as Resource.Success<Way>).data.id) }
-                            )
-                        }
-                    }
+            if (!isLoading) {
+                item {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = 16.dp,
+                                top = 16.dp,
+                                bottom = 16.dp
+                            ),
+                        text = "Пути",
+                        textAlign = TextAlign.Start,
+                        style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
+                    )
                 }
+                items(ways) { way ->
+                    val warnings = Repo.getWagons().count { it.isDirty || it.isSick }
 
-                is Resource.Loading -> {
-                    item {
+                    if (isWarning != (warnings != 0)) {
+                        isWarning = warnings != 0
+                    }
+
+                    CustomBox(
+                        modifier = Modifier.padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = 16.dp,
+                        ),
+                        text = way.name,
+                        onClick = { navigationToWay(way.id) },
+                        firstStr = "${way.locomotives.size} локомотивов на пути",
+                        secondStr = "${way.wagonsIds.size} / ${way.maxCarriagesCount} вагонов на пути",
+                        thirdStr = "$warnings вагонов требуют внимания",
+                        isWarning = warnings != 0
+                    )
+                }
+            } else {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            modifier = Modifier.fillMaxWidth(),
                             text = "Загрузка...",
-                            textAlign = TextAlign.Center,
-                            style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
+                            style = TextStyle(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.W600,
+                                textAlign = TextAlign.Center
+                            ),
                         )
                     }
                 }
-
-                else -> {}
             }
         }
     }
@@ -138,6 +141,5 @@ fun ParkScreenPreview() {
     ParkScreen(
         id = 1,
         navigationToWay = {},
-        popBack = {}
     )
 }

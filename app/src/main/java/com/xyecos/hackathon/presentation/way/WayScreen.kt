@@ -1,18 +1,24 @@
 package com.xyecos.hackathon.presentation.way
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -25,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight.Companion.W500
 import androidx.compose.ui.text.font.FontWeight.Companion.W600
 import androidx.compose.ui.text.style.TextAlign
@@ -42,6 +49,7 @@ import com.xyecos.hackathon.presentation.stations.common.CustomBox
 import com.xyecos.hackathon.presentation.way.locomotives.LocomotiveBox
 import com.xyecos.hackathon.presentation.way.wagons.Direction
 import com.xyecos.hackathon.presentation.way.wagons.WagonButton
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,61 +95,33 @@ fun WayScreen(
     }
 
     if (sheetState.isVisible) {
-        ModalBottomSheet(
-            containerColor = Color(0XFFFCB53B),
-            contentColor = Color.White,
-            sheetState = sheetState,
-            onDismissRequest = {
-                scope.launch {
-                    sheetState.hide()
-                }
-            },
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-            ) {
-                if (pickWagon != null) {
-                    Text(
-                        text = "Вагон № ${pickWagon!!.inventoryNumber}",
-                        fontSize = 18.sp,
-                        fontWeight = W500
-                    )
-                    Text(
-                        text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
-                        fontSize = 18.sp,
-                        fontWeight = W500
-                    )
-                    Text(
-                        text = "Собственник № ${pickWagon!!.owner}",
-                        fontSize = 18.sp,
-                        fontWeight = W500
-                    )
-                    Spacer(modifier = Modifier.height(25.dp))
-                }
-            }
-        }
+        modalBottomSheet(sheetState, scope, pickWagon)
     }
+
     Column {
-        TopBar(
-            extraText = "Путь")
+        TopBar(extraText = "Путь")
 
         LazyColumn(
             modifier = Modifier
+                .weight(1f)
                 .fillMaxWidth(),
-            contentPadding = PaddingValues(start = 8.dp, end = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
                 ScreenHeader(
-                    (way as? Resource.Success)?.data?.name ?: "", {})
+                    title = ((("Путь " + (way as? Resource.Success)?.data?.name))), {}
+                )
             }
 
             when (way) {
                 is Resource.Success -> {
                     items((way as Resource.Success<Way>).data.locomotives) {
                         if (it.direction == Direction.LEFT) {
-                            LocomotiveBox()
+                            LocomotiveBox(
+                                modifier = Modifier
+                                    .padding(top = 16.dp)
+                                //todo инфо про локомотив
+                            )
                         }
                     }
                     items((way as Resource.Success<Way>).data.wagonsIds) {
@@ -180,7 +160,6 @@ fun WayScreen(
                                     println(selectedList)
                                 },
                                 onLongClick = {
-                                    println("Лонг клик")
                                     isSelectionMode = true
                                     selectedList.add((wagon as Resource.Success<Wagon>).data.id)
                                     checkedState.value = true
@@ -194,12 +173,13 @@ fun WayScreen(
                     items((way as Resource.Success<Way>).data.locomotives) {
                         if (it.direction == Direction.RIGHT) {
                             LocomotiveBox()
+                            //todo инфо про локомотив
                         }
                     }
                     if ((way as Resource.Success<Way>).data.wagonsCount + (way as Resource.Success<Way>).data.locomotives.size == 0) {
                         item {
                             Text(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                                 textAlign = TextAlign.Center,
                                 text = "Путь свободен",
                                 fontSize = 24.sp,
@@ -211,16 +191,76 @@ fun WayScreen(
                 }
 
                 is Resource.Loading -> {
-                    println("Загрузка")
-                    items(3) {
-                        CustomBox(
-                            text = null,
-                            onClick = {}
+                    item {
+                        Text(
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                            text = "Загрузка...",
+                            textAlign = TextAlign.Center,
+                            style = TextStyle(fontSize = 22.sp, fontWeight = W500)
                         )
                     }
                 }
 
                 else -> {}
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun modalBottomSheet(
+    sheetState: SheetState,
+    scope: CoroutineScope,
+    pickWagon: Wagon?
+) {
+    ModalBottomSheet(
+        modifier = Modifier,
+        containerColor = Color.White,
+        sheetState = sheetState,
+        dragHandle = {},
+        windowInsets = WindowInsets(top = 0.dp),
+        shape = RoundedCornerShape(0.dp),
+        scrimColor = Color.Transparent,
+        tonalElevation = 8.dp,
+        onDismissRequest = {
+            scope.launch {
+                sheetState.hide()
+            }
+        },
+    ) {
+        Column() {
+            Box(
+                modifier = Modifier
+                    .background(color = Color(0xfffcb53b))
+                    .fillMaxWidth()
+                    .width(2.dp)
+                    .padding(bottom = 4.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (pickWagon != null) {
+                    Text(
+                        text = "Вагон № ${pickWagon!!.inventoryNumber}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Собственник - ${pickWagon!!.owner}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Spacer(modifier = Modifier.height(25.dp))
+                }
             }
         }
     }

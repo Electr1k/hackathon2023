@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xyecos.hackathon.data.Repo
 import com.xyecos.hackathon.data.Resource
 import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Park
@@ -39,22 +40,28 @@ import com.xyecos.hackathon.presentation.stations.common.CustomBox
 fun DetailedStationScreen(
     api: ServerApi = ApiModule.provideApi(),
     id: Int,
-    title: String,
     navigationToPark: (id: Int) -> Unit,
-    popBack: () -> Unit
 ) {
-    var station: Resource<StationById> by remember {
-        mutableStateOf(Resource.Loading())
+    var isLoading by remember {
+        mutableStateOf(true)
     }
+
+    var isWarning by remember {
+        mutableStateOf(false)
+    }
+
+    var parks by remember {
+        mutableStateOf(listOf<Park>())
+    }
+
     LaunchedEffect(true) {
-        if (station is Resource.Loading) {
-            try {
-                station = Resource.Success(api.getStation(id))
-            } catch (e: Exception) {
-                station = Resource.Error(e.message ?: "loading stations error")
-            }
-        }
+        val parksIds = Repo.getFullStations().find { it.id == id }?.parksIds
+
+        parks = Repo.getParks().filter { parksIds?.contains(it.id) ?: false }
+
+        isLoading = false
     }
+
     Column {
         TopBar(
             "Станция"
@@ -62,20 +69,25 @@ fun DetailedStationScreen(
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = 30.dp,
-                    end = 30.dp,
-                    bottom = 30.dp
-                ),
+                .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            item {
+                ScreenHeader(
+                    title = Repo.getStations().find { it.id == id }?.title ?: " - ",
+                    onClick = {},
+                    isWarning = isWarning,
+                    isLoading = isLoading,
+                )
+            }
 
             item {
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
+                            start = 16.dp,
                             top = 16.dp,
                             bottom = 16.dp
                         ),
@@ -85,58 +97,53 @@ fun DetailedStationScreen(
                 )
             }
 
-            when (station) {
-                is Resource.Success -> {
-                    items((station as Resource.Success<StationById>).data.parksIds) {
-                        var park: Resource<Park> by remember {
-                            mutableStateOf(Resource.Loading())
-                        }
-                        if (park is Resource.Loading) {
-                            LaunchedEffect(true) {
-                                try {
-                                    park = Resource.Success(api.getPark(it))
-                                } catch (e: Exception) {
-                                    println(e)
-                                }
-                            }
-
-                        }
-                        if (park is Resource.Success) {
-                            CustomBox(
-                                modifier = Modifier.padding(
-                                    bottom = 16.dp,
-                                ),
-                                text = (park as Resource.Success<Park>).data.name,
-                                onClick = { navigationToPark(it) }
-                            )
-                        }
+            if (!isLoading) {
+                items(parks) { data ->
+                    val warnings = Repo.getWagons().filter { it.parkId == data.id }.count {
+                        it.isDirty || it.isSick
                     }
-                }
 
-                is Resource.Loading -> {
-                    item {
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "Загрузка...",
-                            textAlign = TextAlign.Center,
-                            style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
-                        )
+                    if (isWarning != (warnings != 0)) {
+                        isWarning = warnings != 0
                     }
-                }
 
-                else -> {}
+                    CustomBox(
+                        modifier = Modifier.padding(
+                            start = 16.dp, end = 16.dp, top = 16.dp
+                        ),
+                        text = data.name,
+                        onClick = { navigationToPark(data.id) },
+                        firstStr = "Количество путей: ${data.waysCount}",
+                        secondStr = "Количество вагонов: ${
+                            Repo.getWagons().count { it.parkId == data.id }
+                        } / ${
+                            Repo.getWays().filter { it.parkId == data.id }
+                                .sumOf { it.maxCarriagesCount }
+                        }",
+                        thirdStr = "Вагонов, требующих внимания: $warnings",
+                        isWarning = warnings != 0
+                    )
+                }
+            } else {
+                item {
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = "Загрузка...",
+                        textAlign = TextAlign.Center,
+                        style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
+                    )
+                }
             }
         }
     }
 }
+
 
 @Preview
 @Composable
 fun DetailsStationsPreview() {
     DetailedStationScreen(
         id = 1,
-        title = "Станция",
         navigationToPark = {},
-        popBack = {}
     )
 }

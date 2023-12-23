@@ -29,7 +29,11 @@ import androidx.compose.ui.unit.sp
 fun ScreenHeader(
     title: String = "Список станций",
     onClick: () -> Unit,
-    isWarning: Boolean = false
+    isWarning: Boolean = false,
+    isLoading: Boolean = true,
+    firstStr: String? = null,
+    secondStr: String? = null,
+    thirdStr: String? = null,
 ) {
     Card(
         modifier = Modifier
@@ -62,56 +66,71 @@ fun ScreenHeader(
                         textAlign = TextAlign.Center
                     ),
                 )
-                Text(
-                    text = "5 станций загружено",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
+                if (!isLoading) {
+                    firstStr?.let {
+                        Text(
+                            text = it,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .padding(
+                                    top = 4.dp,
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                )
                         )
-                )
+                    }
 
-                Text(
-                    text = "5 типов вагонов загружено",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
+                    secondStr?.let {
+                        Text(
+                            text = it,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .padding(
+                                    top = 4.dp,
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                )
                         )
-                )
+                    }
 
-                Text(
-                    text = "5 локомотивов в работе",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
+                    thirdStr?.let {
+                        Text(
+                            text = it,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .padding(
+                                    top = 4.dp,
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                )
                         )
-                        .defaultMinSize(minHeight = 34.dp),
-                )
+                    }
+                }
             }
-            Column(
-                horizontalAlignment = androidx.compose.ui.Alignment.End,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 24.dp,
-                        )
-                        .size(16.dp)
-                        .background(
-                            Color(
-                                if (isWarning) {
-                                    0xfff57f29
-                                } else {
-                                    0xFF4CAF50
-                                }
+            if (!isLoading) {
+                Column(
+                    horizontalAlignment = androidx.compose.ui.Alignment.End,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 24.dp,
+                            )
+                            .size(16.dp)
+                            .background(
+                                Color(
+                                    if (isWarning) {
+                                        0xfff57f29
+                                    } else {
+                                        0xFF4CAF50
+                                    }
+                                ),
+                                CircleShape
                             ),
-                            CircleShape
-                        ),
-                )
+                    )
+                }
             }
         }
     }

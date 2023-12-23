@@ -28,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,41 +38,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.xyecos.hackathon.data.Repo
 import com.xyecos.hackathon.data.Resource
 import com.xyecos.hackathon.data.ServerApi
-import com.xyecos.hackathon.data.dto.Station
+import com.xyecos.hackathon.data.dto.Park
+import com.xyecos.hackathon.data.dto.StationById
 import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.common.ScreenHeader
 import com.xyecos.hackathon.presentation.common.TopBar
 import com.xyecos.hackathon.presentation.stations.common.CustomBox
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
 @Composable
 fun StationsScreen(
-    api: ServerApi = ApiModule.provideApi(),
     navigateToStationById: (id: Int, title: String) -> Unit,
     popBack: () -> Unit
 ) {
-    var stations: Resource<List<Station>> by remember {
-        mutableStateOf(Resource.Loading())
+    var isLoading by remember {
+        mutableStateOf(true)
+    }
+
+    LaunchedEffect(true) {
+        Repo.ready.filter { it }.collectLatest {
+            isLoading = false
+        }
     }
 
     var stationsHidden by remember {
         mutableStateOf(true)
     }
 
-    val scope = rememberCoroutineScope()
-    LaunchedEffect(true) {
-        if (stations is Resource.Loading) {
-            try {
-                stations = Resource.Success(api.getStations())
-            } catch (e: Exception) {
-                stations = Resource.Error(e.message ?: "loading stations error")
-            }
-        }
-    }
-
-    var density = LocalDensity.current
+    val density = LocalDensity.current
 
     Column {
         TopBar()
@@ -84,44 +81,86 @@ fun StationsScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                ScreenHeader(title = "Список станций", {
-                    stationsHidden = !stationsHidden
-                })
+                ScreenHeader(
+                    title = "Список станций",
+                    onClick = {
+                        stationsHidden = !stationsHidden
+                    },
+                    isLoading = isLoading
+                )
             }
 
-            items((stations as? Resource.Success<List<Station>>)?.data ?: emptyList()) { station ->
-                AnimatedVisibility(
-                    modifier = Modifier.wrapContentSize(),
-                    visible = !stationsHidden,
-                    enter = slideInVertically {
-                        // Slide in from 40 dp from the top.
-                        with(density) { -40.dp.roundToPx() }
-                    } + expandVertically(
-                        // Expand from the top.
-                        expandFrom = Alignment.Top
-                    ) + fadeIn(
-                        // Fade in with the initial alpha of 0.3f.
-                        initialAlpha = 0.3f
-                    ),
-                    exit = slideOutVertically() + shrinkVertically() + fadeOut()
-                ) {
-                    CustomBox(
-                        modifier = if (!stationsHidden) {
-                            Modifier
-                                .padding(start = 16.dp, end = 16.dp, top = 16.dp)
-                        } else {
-                            Modifier
-                        },
-                        text = station.title,
-                        onClick = { navigateToStationById(station.id, station.title) }
-                    )
+            if (!isLoading) {
+                items(
+                    Repo.getStations()
+                ) { station ->
+                    val wagons = Repo.getWagons().filter { it.stationId == station.id }
+                    val ways = Repo.getWays().filter { it.stationId == station.id }
+                    val warns = wagons.count { it.isDirty || it.isSick }
+
+                    AnimatedVisibility(
+                        modifier = Modifier.wrapContentSize(),
+                        visible = !stationsHidden,
+                        enter = slideInVertically {
+                            // Slide in from 40 dp from the top.
+                            with(density) { -40.dp.roundToPx() }
+                        } + expandVertically(
+                            // Expand from the top.
+                            expandFrom = Alignment.Top
+                        ) + fadeIn(
+                            // Fade in with the initial alpha of 0.3f.
+                            initialAlpha = 0.3f
+                        ),
+                        exit = slideOutVertically() + shrinkVertically() + fadeOut()
+                    ) {
+                        CustomBox(
+                            modifier = if (!stationsHidden) {
+                                Modifier
+                                    .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                            } else {
+                                Modifier
+                            },
+                            text = station.title,
+                            onClick = { navigateToStationById(station.id, station.title) },
+                            firstStr = "${
+                                Repo.getFullStations().find { it.id == station.id }?.parksCount ?: 0
+                            } парков в системе",
+                            secondStr = "${
+                                Repo.getWays().filter { it.stationId == station.id }
+                                    .sumOf { it.locomotives.size }
+                            } локомотивов в системе",
+                            thirdStr = "${wagons.size} вагонов в системе",
+                            fourthStr = "${warns} вагонов требуют внимания",
+                            fifthStr = "${ways.sumOf { it.maxCarriagesCount }} свободных мест",
+                            isWarning = warns != 0
+                        )
+                    }
+                }
+            } else {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(top = 16.dp, bottom = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Загрузка...",
+                            style = TextStyle(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.W600,
+                                textAlign = TextAlign.Center
+                            ),
+                        )
+                    }
                 }
             }
 
             item {
                 AnimatedVisibility(
                     modifier = Modifier.padding(top = 16.dp, bottom = 32.dp),
-                    visible = stations is Resource.Success<List<Station>>,
+                    visible = !isLoading,
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {

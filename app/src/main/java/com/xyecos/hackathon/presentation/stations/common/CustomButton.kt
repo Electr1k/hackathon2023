@@ -38,12 +38,16 @@ fun CustomBox(
     modifier: Modifier = Modifier,
     text: String?,
     onClick: () -> Unit,
-    isWarning: Boolean = true
-){
+    isWarning: Boolean = true,
+    firstStr: String? = null,
+    secondStr: String? = null,
+    thirdStr: String? = null,
+    fourthStr: String? = null,
+    fifthStr: String? = null,
+) {
     Card(
         modifier = modifier
-            .clickable { onClick() }
-        ,
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFFFFFFF),
         ),
@@ -60,8 +64,7 @@ fun CustomBox(
                             start = 16.dp,
                             end = 16.dp,
                             top = 16.dp,
-                        )
-                        .defaultMinSize(minHeight = 32.dp),
+                        ),
                     color = Color.Black,
                     text = text.orEmpty().uppercase(),
                     style = TextStyle(
@@ -70,42 +73,73 @@ fun CustomBox(
                         textAlign = TextAlign.Center
                     ),
                 )
-                Text(
-                    text = "5 парков загружено",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                        )
-                )
+                firstStr?.let { str ->
+                    Text(
+                        text = str,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .padding(
+                                top = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            )
+                    )
+                }
 
-                Text(
-                    text = "5 путей загружено",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                        )
-                )
+                secondStr?.let { str ->
+                    Text(
+                        text = str,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .padding(
+                                top = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            )
+                    )
+                }
 
-                Text(
-                    text = "2 локомотива в работе",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                        )
-                )
+                thirdStr?.let { str ->
+                    Text(
+                        text = str,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .padding(
+                                top = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            )
+                    )
+                }
 
-                Text(
-                    text = "14 вагонов на станции",
-                    modifier = Modifier
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                        )
-                        .defaultMinSize(minHeight = 34.dp),
-                )
+                fourthStr?.let { str ->
+                    Text(
+                        text = str,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .padding(
+                                top = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            )
+                    )
+                }
+
+                fifthStr?.let { str ->
+                    Text(
+                        text = str,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .padding(
+                                top = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            )
+                    )
+                }
+
+                Box(modifier = Modifier.height(16.dp))
+
             }
             Column(
                 horizontalAlignment = Alignment.End,
@@ -115,7 +149,7 @@ fun CustomBox(
                         .padding(
                             start = 16.dp,
                             end = 16.dp,
-                            top = 24.dp,
+                            top = 22.dp,
                         )
                         .size(16.dp)
                         .background(Color(if (isWarning) 0xfff57f29 else 0xFF4CAF50), CircleShape),
@@ -123,37 +157,6 @@ fun CustomBox(
             }
         }
     }
-//
-//    OutlinedButton(
-//        onClick = onClick,
-//        modifier = modifier
-//            .fillMaxWidth()
-//            .height(52.dp),
-//        colors = ButtonDefaults.buttonColors(
-//            containerColor = Color.White
-//
-//        ),
-//        border = ButtonDefaults.outlinedButtonBorder.copy(
-//            width = 2.dp,
-//            brush = Brush.linearGradient(
-//                colors = listOf(
-//                    Color(0xffe32213),
-//                    Color(0xfff57f29),
-//                )
-//            )
-//        ),
-//        shape = RoundedCornerShape(4.dp)
-//    ) {
-//        if (text != null) {
-//            Text(
-//                color = Color(0xFF000000),
-//                text = text.toUpperCase(),
-//                fontSize = 16.sp,
-//                modifier = Modifier,
-//                textAlign = TextAlign.Center
-//            )
-//        }
-//    }
 }
 
 @Preview()

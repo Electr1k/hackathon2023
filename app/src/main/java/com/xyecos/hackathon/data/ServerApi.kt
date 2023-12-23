@@ -33,4 +33,17 @@ interface ServerApi {
     suspend fun getWagon(
         @Path("id") id: Int
     ): Wagon
+
+    @GET("fullWagons")
+    suspend fun getFullWagons(): List<Wagon>
+
+    @GET("fullStations")
+    suspend fun getFullStations(): List<StationById>
+
+    @GET("fullParks")
+    suspend fun getFullParks(): List<Park>
+
+    @GET("fullWays")
+    suspend fun getFullWays(): List<Way>
+
 }
