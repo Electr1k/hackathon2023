@@ -19,5 +19,8 @@ enum class Screen(
     ),
     Way(
         route = "way/{$ID}"
+    ),
+    Map(
+        route = "map"
     )
 }

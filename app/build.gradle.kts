@@ -74,6 +74,16 @@ dependencies {
     implementation("com.squareup.moshi:moshi-adapters:1.10.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.9.1")
 
+    // Map
+    implementation("com.google.maps.android:maps-compose:4.3.0")
+
+    // Optionally, you can include the Compose utils library for Clustering,
+    // Street View metadata checks, etc.
+    implementation("com.google.maps.android:maps-compose-utils:4.3.0")
+
+    // Optionally, you can include the widgets library for ScaleBar, etc.
+    implementation("com.google.maps.android:maps-compose-widgets:4.3.0")
+
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.2")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.2")
 

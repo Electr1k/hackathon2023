@@ -10,6 +10,7 @@ import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.park.ParkScreen
 import com.xyecos.hackathon.presentation.detailed_station.DetailedStationScreen
+import com.xyecos.hackathon.presentation.map.MapScreen
 import com.xyecos.hackathon.presentation.splash.SplashScreen
 import com.xyecos.hackathon.presentation.stations.StationsScreen
 import com.xyecos.hackathon.presentation.way.WayScreen
@@ -116,6 +117,9 @@ fun NavigationGraph(
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
                 popBack = { popBackStack() }
             )
+        }
+        composable(route = Screen.Map.route){
+            MapScreen()
         }
     }
 }
