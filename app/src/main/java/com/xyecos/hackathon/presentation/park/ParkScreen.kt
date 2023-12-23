@@ -2,6 +2,7 @@ package com.xyecos.hackathon.presentation.park
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xyecos.hackathon.data.Resource
@@ -28,7 +30,8 @@ import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Park
 import com.xyecos.hackathon.data.dto.Way
 import com.xyecos.hackathon.di.ApiModule
-import com.xyecos.hackathon.presentation.common.TopAppBar
+import com.xyecos.hackathon.presentation.common.ScreenHeader
+import com.xyecos.hackathon.presentation.common.TopBar
 import com.xyecos.hackathon.presentation.stations.common.CustomBox
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -38,11 +41,11 @@ fun ParkScreen(
     id: Int,
     navigationToWay: (id: Int) -> Unit,
     popBack: () -> Unit
-){
-    var park: Resource<Park> by remember{
+) {
+    var park: Resource<Park> by remember {
         mutableStateOf(Resource.Loading())
     }
-    LaunchedEffect(true){
+    LaunchedEffect(true) {
         if (park is Resource.Loading) {
             try {
                 park = Resource.Success(api.getPark(id))
@@ -51,42 +54,47 @@ fun ParkScreen(
             }
         }
     }
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize(),
-        topBar = {
-            TopAppBar(title = (park as? Resource.Success)?.data?.name ?: "")
-        }
 
-    ) { padding->
+    Column {
+        TopBar(
+            "Парк",
+        )
+
+        ScreenHeader(
+            title = "Парк",
+            onClick = { },
+            isWarning = false
+        )
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    top = 30.dp + padding.calculateTopPadding(),
                     start = 30.dp,
                     end = 30.dp,
-                    bottom = 30.dp
                 ),
-            contentPadding = PaddingValues(top = 14.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = "Пути",
-                textAlign = TextAlign.Center,
-                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
-            ) }
-            when (park){
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            top = 16.dp,
+                            bottom = 16.dp
+                        ),
+                    text = "Пути",
+                    textAlign = TextAlign.Start,
+                    style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
+                )
+            }
+            when (park) {
                 is Resource.Success -> {
                     items((park as Resource.Success<Park>).data.waysIds) {
-                        var way: Resource<Way> by remember{
+                        var way: Resource<Way> by remember {
                             mutableStateOf(Resource.Loading())
                         }
-                        if (way is Resource.Loading){
-                            LaunchedEffect(true){
+                        if (way is Resource.Loading) {
+                            LaunchedEffect(true) {
                                 try {
                                     way = Resource.Success(api.getWay(it))
                                 } catch (e: Exception) {
@@ -97,29 +105,39 @@ fun ParkScreen(
 
                         if (way is Resource.Success) {
                             CustomBox(
+                                modifier = Modifier.padding(
+                                    bottom = 16.dp,
+                                ),
                                 text = (way as Resource.Success<Way>).data.name,
-                                onClick = {navigationToWay((way as Resource.Success<Way>).data.id)}
-                            )
-                        }
-                        else{
-                            CustomBox(
-                                text = null,
-                                onClick = {}
+                                onClick = { navigationToWay((way as Resource.Success<Way>).data.id) }
                             )
                         }
                     }
                 }
+
                 is Resource.Loading -> {
-                    println("Загрузка")
-                    items(3) {
-                        CustomBox(
-                            text = null,
-                            onClick = {}
+                    item {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Загрузка...",
+                            textAlign = TextAlign.Center,
+                            style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
                         )
                     }
                 }
+
                 else -> {}
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun ParkScreenPreview() {
+    ParkScreen(
+        id = 1,
+        navigationToWay = {},
+        popBack = {}
+    )
 }

@@ -1,8 +1,6 @@
 package com.xyecos.hackathon.presentation.way
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +14,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight.Companion.W500
 import androidx.compose.ui.text.font.FontWeight.Companion.W600
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xyecos.hackathon.data.Resource
@@ -38,11 +36,12 @@ import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Wagon
 import com.xyecos.hackathon.data.dto.Way
 import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.common.ScreenHeader
+import com.xyecos.hackathon.presentation.common.TopBar
 import com.xyecos.hackathon.presentation.stations.common.CustomBox
 import com.xyecos.hackathon.presentation.way.locomotives.LocomotiveBox
 import com.xyecos.hackathon.presentation.way.wagons.Direction
 import com.xyecos.hackathon.presentation.way.wagons.WagonButton
-import com.xyecos.hackathon.ui.theme.mainBlue
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,7 +51,7 @@ fun WayScreen(
     api: ServerApi = ApiModule.provideApi(),
     id: Int,
     popBack: () -> Unit
-){
+) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -69,17 +68,15 @@ fun WayScreen(
         mutableStateOf(false)
     }
 
-    var pickWagon by remember{
+    var pickWagon by remember {
         mutableStateOf<Wagon?>(null)
     }
 
-    var way: Resource<Way> by remember{
+    var way: Resource<Way> by remember {
         mutableStateOf(Resource.Loading())
     }
 
-
-
-    LaunchedEffect(true){
+    LaunchedEffect(true) {
         if (way is Resource.Loading) {
             way = try {
                 Resource.Success(api.getWay(id))
@@ -88,71 +85,77 @@ fun WayScreen(
             }
         }
     }
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = { com.xyecos.hackathon.presentation.common.TopAppBar((way as? Resource.Success)?.data?.name ?: "")}) {
-        if (sheetState.isVisible) {
-            ModalBottomSheet(
-                containerColor = Color(0XFFFCB53B),
-                contentColor = Color.White,
-                sheetState = sheetState,
-                onDismissRequest = {
-                    scope.launch {
-                        sheetState.hide()
-                    }
-                },
+
+    if (sheetState.isVisible) {
+        ModalBottomSheet(
+            containerColor = Color(0XFFFCB53B),
+            contentColor = Color.White,
+            sheetState = sheetState,
+            onDismissRequest = {
+                scope.launch {
+                    sheetState.hide()
+                }
+            },
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                ) {
-                    if (pickWagon != null) {
-                        Text(
-                            text = "Вагон № ${pickWagon!!.inventoryNumber}",
-                            fontSize = 18.sp,
-                            fontWeight = W500
-                        )
-                        Text(
-                            text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
-                            fontSize = 18.sp,
-                            fontWeight = W500)
-                        Text(
-                            text = "Собственник № ${pickWagon!!.owner}",
-                            fontSize = 18.sp,
-                            fontWeight = W500)
-                        Spacer(modifier = Modifier.height(25.dp))
-                    }
+                if (pickWagon != null) {
+                    Text(
+                        text = "Вагон № ${pickWagon!!.inventoryNumber}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Собственник № ${pickWagon!!.owner}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Spacer(modifier = Modifier.height(25.dp))
                 }
             }
         }
+    }
+    Column {
+        TopBar(
+            extraText = "Путь")
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 20.dp + it.calculateTopPadding()),
+                .fillMaxWidth(),
             contentPadding = PaddingValues(start = 8.dp, end = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            when (way){
+            item {
+                ScreenHeader(
+                    (way as? Resource.Success)?.data?.name ?: "", {})
+            }
+
+            when (way) {
                 is Resource.Success -> {
-                    items((way as Resource.Success<Way>).data.locomotives){
-                        if (it.direction == Direction.LEFT){
+                    items((way as Resource.Success<Way>).data.locomotives) {
+                        if (it.direction == Direction.LEFT) {
                             LocomotiveBox()
                         }
                     }
-                    items((way as Resource.Success<Way>).data.wagonsIds){
-                        var wagon: Resource<Wagon> by remember{
+                    items((way as Resource.Success<Way>).data.wagonsIds) {
+                        var wagon: Resource<Wagon> by remember {
                             mutableStateOf(Resource.Loading())
                         }
-                        LaunchedEffect(key1 = true){
-                            try{
+                        LaunchedEffect(key1 = true) {
+                            try {
                                 wagon = Resource.Success(api.getWagon(it))
-                            }
-                            catch (e: Exception){
+                            } catch (e: Exception) {
                                 wagon = Resource.Error("")
                             }
                         }
-                        if (wagon is Resource.Success){
+                        if (wagon is Resource.Success) {
                             val checkedState = remember { mutableStateOf(false) }
                             WagonButton(
                                 wagon = (wagon as Resource.Success<Wagon>).data,
@@ -164,14 +167,12 @@ fun WayScreen(
                                         scope.launch {
                                             sheetState.show()
                                         }
-                                    }
-                                    else{
-                                        if ((wagon as Resource.Success<Wagon>).data.id in selectedList){
+                                    } else {
+                                        if ((wagon as Resource.Success<Wagon>).data.id in selectedList) {
                                             selectedList.remove((wagon as Resource.Success<Wagon>).data.id)
                                             checkedState.value = false
                                             if (selectedList.size == 0) isSelectionMode = false
-                                        }
-                                        else{
+                                        } else {
                                             selectedList.add((wagon as Resource.Success<Wagon>).data.id)
                                             checkedState.value = true
                                         }
@@ -190,17 +191,25 @@ fun WayScreen(
                             )
                         }
                     }
-                    items((way as Resource.Success<Way>).data.locomotives){
-                        if (it.direction == Direction.RIGHT){
+                    items((way as Resource.Success<Way>).data.locomotives) {
+                        if (it.direction == Direction.RIGHT) {
                             LocomotiveBox()
                         }
                     }
-                    if ((way as Resource.Success<Way>).data.wagonsCount + (way as Resource.Success<Way>).data.locomotives.size == 0){
+                    if ((way as Resource.Success<Way>).data.wagonsCount + (way as Resource.Success<Way>).data.locomotives.size == 0) {
                         item {
-                            Text(modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, text = "Путь свободен", fontSize = 24.sp, fontWeight = W600, color = Color(0xFF0B2C62))
+                            Text(
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                text = "Путь свободен",
+                                fontSize = 24.sp,
+                                fontWeight = W600,
+                                color = Color(0xFF0B2C62)
+                            )
                         }
                     }
                 }
+
                 is Resource.Loading -> {
                     println("Загрузка")
                     items(3) {
@@ -210,8 +219,15 @@ fun WayScreen(
                         )
                     }
                 }
+
                 else -> {}
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun WayScreen() {
+    WayScreen(id = 1, popBack = {})
 }
