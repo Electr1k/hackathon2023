@@ -46,7 +46,7 @@ fun NavigationGraph(
 
         composable(route = Screen.Splash.route){
             SplashScreen(openApp = {
-                navigateByRoute(route = Screen.Stations.route,
+                navigateByRoute(route = Screen.Map.route,
                     popUpRoute = Screen.Splash.route,
                     isInclusive = true)
             })
@@ -119,7 +119,11 @@ fun NavigationGraph(
             )
         }
         composable(route = Screen.Map.route){
-            MapScreen()
+            MapScreen(
+                api = api,
+                navigateToStationById = { id ->
+                    navigateByRoute(Screen.DetailedStation.route.replace("{$ID}", id.toString()),
+                        null)})
         }
     }
 }
