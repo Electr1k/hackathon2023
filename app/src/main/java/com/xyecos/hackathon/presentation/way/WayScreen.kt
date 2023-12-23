@@ -1,11 +1,13 @@
 package com.xyecos.hackathon.presentation.way
 
-import android.R
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.BottomSheetScaffold
@@ -38,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight.Companion.W500
 import androidx.compose.ui.text.font.FontWeight.Companion.W600
 import androidx.compose.ui.text.style.TextAlign
@@ -68,7 +72,6 @@ fun WayScreen(
 ){
     val scope = rememberCoroutineScope()
 
-
     // Нижний лист для информации о вагоне
     val infoSheetState = rememberModalBottomSheetState()
 
@@ -90,8 +93,13 @@ fun WayScreen(
     }
 
     // Выбранные вагоны
-    val selectedList = remember { mutableStateListOf<Int>()}
+    val selectedIdList = remember { mutableStateListOf<Int>()} // Хранит id, можно было и и объекты класса, но перед запросом нужно бы было создать новый список именно с id
+    val selectedItemList = remember {
+        mutableStateListOf<Wagon>()
+    }
 
+
+    var density = LocalDensity.current
 
     // Вагон, информация о котором будет в нижнем листе
     var pickWagon by remember{
@@ -125,7 +133,7 @@ fun WayScreen(
         }
 
         if (moveSheetState.bottomSheetState.isVisible) {
-            MoveModalBottomSheet(scope = scope, moveSheetState = moveSheetState, selectedList = selectedList)
+            MoveModalBottomSheet(scope = scope, moveSheetState = moveSheetState, selectedList = selectedIdList)
         }
 
         LazyColumn(
@@ -138,15 +146,16 @@ fun WayScreen(
         ) {
             when (way){
                 is Resource.Success -> {
+                    val wayData = (way as Resource.Success<Way>).data
                     // Рисуем локомотивы, который находятся слева
-                    items((way as Resource.Success<Way>).data.locomotives){
+                    items(wayData.locomotives){
                         if (it.direction == Direction.LEFT){
                             LocomotiveBox()
                         }
                     }
                     // Рисуем вагоны
                     
-                    items((way as Resource.Success<Way>).data.wagonsIds){
+                    items(wayData.wagonsIds){
                             var wagon: Resource<Wagon> by remember {
                                 mutableStateOf(Resource.Loading())
                             }
@@ -159,46 +168,52 @@ fun WayScreen(
                         }
                         if (wagon is Resource.Success) {
                             val checkedState = remember { mutableStateOf(false) }
+                            val wagonData = (wagon as Resource.Success<Wagon>).data
                             AnimatedVisibility(
+                                modifier = Modifier.wrapContentSize(),
                                 visible = visible.value,
-                                enter = slideInVertically(
-                                    animationSpec = tween(
-                                        durationMillis = 2000,
-                                        easing = LinearOutSlowInEasing
-                                    ),
-                                    initialOffsetY = { it }
-                            )
+                                enter = slideInVertically {
+                                    // Slide in from 72 dp from the top.
+                                    with(density) { -72.dp.roundToPx() }
+                                } + expandVertically(
+                                    // Expand from the top.
+                                    expandFrom = Alignment.Top
+                                ) + fadeIn(
+                                    // Fade in with the initial alpha of 0.3f.
+                                    initialAlpha = 0.3f
+                                ),
+                                exit = slideOutVertically() + shrinkVertically() + fadeOut()
                             ) {
                                 WagonButton(
-                                    wagon = (wagon as Resource.Success<Wagon>).data,
+                                    wagon = wagonData,
                                     onClick = {
-
                                         if (!isSelectionMode) {
-                                            pickWagon = ((wagon as Resource.Success<Wagon>).data)
+                                            pickWagon = wagonData
                                             scope.launch {
                                                 infoSheetState.show()
                                             }
                                         } else {
-                                            if ((wagon as Resource.Success<Wagon>).data.id in selectedList) {
-                                                selectedList.remove((wagon as Resource.Success<Wagon>).data.id)
+                                            if (wagonData.id in selectedIdList) {
+                                                selectedIdList.remove(wagonData.id)
+                                                selectedItemList.remove(wagonData)
                                                 checkedState.value = false
-                                                if (selectedList.size == 0) {
+                                                if (selectedIdList.size == 0) {
                                                     isSelectionMode = false
                                                     scope.launch {
                                                         moveSheetState.bottomSheetState.hide()
                                                     }
                                                 }
                                             } else {
-                                                selectedList.add((wagon as Resource.Success<Wagon>).data.id)
+                                                selectedIdList.add(wagonData.id)
+                                                selectedItemList.add(wagonData)
                                                 checkedState.value = true
                                             }
                                         }
-                                        println(selectedList)
                                     },
                                     onLongClick = {
-                                        println("Лонг клик")
                                         isSelectionMode = true
-                                        selectedList.add((wagon as Resource.Success<Wagon>).data.id)
+                                        selectedIdList.add(wagonData.id)
+                                        selectedItemList.add(wagonData)
                                         checkedState.value = true
                                         scope.launch {
                                             moveSheetState.bottomSheetState.expand()
@@ -206,18 +221,33 @@ fun WayScreen(
                                     },
                                     isChecked = checkedState.value,
                                     isSelectionMode = isSelectionMode,
-                                    onChangeCheck = { }
+                                    onChangeCheck = {
+                                        if (wagonData.id in selectedIdList) {
+                                            selectedIdList.remove(wagonData.id)
+                                            checkedState.value = false
+                                            if (selectedIdList.size == 0) {
+                                                isSelectionMode = false
+                                                scope.launch {
+                                                    moveSheetState.bottomSheetState.hide()
+                                                }
+                                            }
+                                        } else {
+                                            selectedIdList.add(wagonData.id)
+                                            selectedItemList.add(wagonData)
+                                            checkedState.value = true
+                                        }
+                                    }
                                 )
                         }
                         }
                     }
                     // Рисуем локомотивы, который находятся слева
-                    items((way as Resource.Success<Way>).data.locomotives){
+                    items(wayData.locomotives){
                         if (it.direction == Direction.RIGHT){
                             LocomotiveBox()
                         }
                     }
-                    if ((way as Resource.Success<Way>).data.wagonsCount + (way as Resource.Success<Way>).data.locomotives.size == 0){
+                    if (wayData.wagonsCount + wayData.locomotives.size == 0){
                         item {
                             Text(modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, text = "Путь свободен", fontSize = 24.sp, fontWeight = W600, color = Color(0xFF0B2C62))
                         }
@@ -302,10 +332,11 @@ fun MoveModalBottomSheet(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
         ) {
-                Text(
-                text = "Количество ${selectedList.size}",
+            Text(
+                text = "Перемещение вагонов",
                 fontSize = 18.sp,
-                fontWeight = W500
+                fontWeight = W500,
+                //color = Colors.
             )
         }}
 
