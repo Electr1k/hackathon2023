@@ -22,5 +22,8 @@ enum class Screen(
     ),
     Map(
         route = "map"
+    ),
+    Login(
+        route = "login"
     )
 }
