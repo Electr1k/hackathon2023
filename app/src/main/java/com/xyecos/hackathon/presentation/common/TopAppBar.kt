@@ -61,7 +61,7 @@ fun TopAppBar(
                     )
             }
         }
-        Divider(color = Color(0xFF0B2C62), thickness = 2.dp)
+        Divider(color = Color(0XFFF57F29), thickness = 2.dp)
     }
 }
 

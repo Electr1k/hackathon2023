@@ -1,40 +1,64 @@
 package com.xyecos.hackathon.presentation.way.wagons
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.xyecos.hackathon.data.dto.Wagon
 import com.xyecos.hackathon.presentation.way.wagons.Owner.*
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WagonButton(
     modifier: Modifier = Modifier,
     wagon: Wagon,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isSelectionMode: Boolean,
+    isChecked: Boolean,
+    onChangeCheck: (state: Boolean) -> Unit,
+    onLongClick: () -> Unit
 ){
-    Button(
-        onClick = onClick,
+    Card(
         modifier = modifier
-            .size(200.dp, 72.dp),
-        colors = ButtonDefaults.buttonColors(
+            .size(200.dp, 72.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
+        colors = CardDefaults.cardColors(
             getColorForBody(wagon.owner)
         ),
         shape = RoundedCornerShape(4.dp),
         border = BorderStroke(2.dp, getColorForBorder(wagon.owner))
     ) {
-        androidx.compose.material3.Text(
-            text = wagon.inventoryNumber.toUpperCase(),
-            modifier = Modifier,
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-        )
+        if (isSelectionMode){
+            Checkbox(modifier = Modifier.align(Alignment.End), checked = isChecked, onCheckedChange = {onChangeCheck(isChecked)})
+        }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = wagon.inventoryNumber.toUpperCase(),
+                modifier = Modifier,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

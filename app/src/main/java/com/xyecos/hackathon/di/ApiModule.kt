@@ -39,7 +39,7 @@ object ApiModule {
             .build()
 
         return Retrofit.Builder()
-            .baseUrl("https://0a4b-83-97-115-37.ngrok-free.app/")
+            .baseUrl("https://d27e-83-97-115-19.ngrok-free.app/")
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
