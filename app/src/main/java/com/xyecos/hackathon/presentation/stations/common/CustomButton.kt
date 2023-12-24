@@ -44,6 +44,8 @@ fun CustomBox(
     thirdStr: String? = null,
     fourthStr: String? = null,
     fifthStr: String? = null,
+    sixthStr: String? = null,
+    seventhStr: String? = null,
 ) {
     Card(
         modifier = modifier
@@ -126,6 +128,32 @@ fun CustomBox(
                 }
 
                 fifthStr?.let { str ->
+                    Text(
+                        text = str,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .padding(
+                                top = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            )
+                    )
+                }
+
+                sixthStr?.let { str ->
+                    Text(
+                        text = str,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .padding(
+                                top = 4.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                            )
+                    )
+                }
+
+                seventhStr?.let { str ->
                     Text(
                         text = str,
                         fontSize = 14.sp,

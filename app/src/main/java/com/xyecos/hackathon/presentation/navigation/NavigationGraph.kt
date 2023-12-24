@@ -11,6 +11,7 @@ import com.xyecos.hackathon.di.ApiModule
 import com.xyecos.hackathon.presentation.auth.MainLoginScreenContent
 import com.xyecos.hackathon.presentation.park.ParkScreen
 import com.xyecos.hackathon.presentation.detailed_station.DetailedStationScreen
+import com.xyecos.hackathon.presentation.forms.MockFormsContent
 import com.xyecos.hackathon.presentation.map.MapScreen
 import com.xyecos.hackathon.presentation.splash.SplashScreen
 import com.xyecos.hackathon.presentation.stations.StationsScreen
@@ -70,6 +71,7 @@ fun NavigationGraph(
                     )
                 },
                 navigateToMap = { navigateByRoute(Screen.Map.route, null) },
+                navigateToForms = { navigateByRoute(Screen.Forms.route, null) },
                 popBack = { popBackStack() }
             )
         }
@@ -129,6 +131,11 @@ fun NavigationGraph(
                         null
                     )
                 })
+        }
+
+        composable(route = Screen.Forms.route) {
+            MockFormsContent(
+            )
         }
 
         composable(route = Screen.Login.route) {

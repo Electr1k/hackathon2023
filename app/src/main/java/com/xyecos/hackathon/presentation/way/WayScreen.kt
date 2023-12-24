@@ -288,12 +288,12 @@ fun WayScreen(
             if ((way?.wagonsCount ?: 0) + (way?.locomotives?.size ?: 0) == 0) {
                 item {
                     Text(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                         textAlign = TextAlign.Center,
                         text = "Путь свободен",
                         fontSize = 24.sp,
                         fontWeight = W600,
-                        color = Color(0xFF0B2C62)
+                        color = Color(0xFFFF9800)
                     )
                 }
             }

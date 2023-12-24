@@ -55,6 +55,7 @@ import kotlinx.coroutines.flow.filter
 fun StationsScreen(
     navigateToStationById: (id: Int, title: String) -> Unit,
     navigateToMap: () -> Unit,
+    navigateToForms: () -> Unit,
     popBack: () -> Unit
 ) {
     var isLoading by remember {
@@ -160,7 +161,7 @@ fun StationsScreen(
 
             item {
                 AnimatedVisibility(
-                    modifier = Modifier.padding(top = 16.dp, bottom = 32.dp),
+                    modifier = Modifier.padding(top = 16.dp),
                     visible = !isLoading,
                     enter = fadeIn(),
                     exit = fadeOut()
@@ -187,6 +188,46 @@ fun StationsScreen(
                                     .defaultMinSize(minHeight = 48.dp),
                                 color = Color.Black,
                                 text = "Открыть карту",
+                                style = TextStyle(
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.W600,
+                                    textAlign = TextAlign.Center
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    modifier = Modifier.padding(top = 16.dp, bottom = 32.dp),
+                    visible = !isLoading,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .clickable { navigateToForms() },
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFFFFF),
+                        ),
+                        elevation = CardDefaults.elevatedCardElevation(4.dp),
+                        shape = RoundedCornerShape(0.dp)
+                    ) {
+                        Row {
+                            Text(
+                                modifier = Modifier
+                                    .padding(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        top = 16.dp,
+                                    )
+                                    .defaultMinSize(minHeight = 48.dp),
+                                color = Color.Black,
+                                text = "Список операций",
                                 style = TextStyle(
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.W600,
