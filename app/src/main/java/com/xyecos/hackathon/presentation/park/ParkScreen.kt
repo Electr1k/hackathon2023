@@ -27,6 +27,7 @@ import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Park
 import com.xyecos.hackathon.data.dto.Way
 import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.Loading
 import com.xyecos.hackathon.presentation.common.ScreenHeader
 import com.xyecos.hackathon.presentation.common.TopBar
 import com.xyecos.hackathon.presentation.stations.common.CustomBox
@@ -120,6 +121,7 @@ fun ParkScreen(
                             .padding(top = 16.dp, bottom = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Loading()
                         Text(
                             text = "Загрузка...",
                             style = TextStyle(

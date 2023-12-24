@@ -31,6 +31,7 @@ import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.Park
 import com.xyecos.hackathon.data.dto.StationById
 import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.Loading
 import com.xyecos.hackathon.presentation.common.ScreenHeader
 import com.xyecos.hackathon.presentation.common.TopBar
 import com.xyecos.hackathon.presentation.stations.common.CustomBox
@@ -126,12 +127,15 @@ fun DetailedStationScreen(
                 }
             } else {
                 item {
-                    Text(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = "Загрузка...",
-                        textAlign = TextAlign.Center,
-                        style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
-                    )
+                    Column {
+                        Loading()
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Загрузка...",
+                            textAlign = TextAlign.Center,
+                            style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.W500)
+                        )
+                    }
                 }
             }
         }

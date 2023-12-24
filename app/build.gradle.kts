@@ -94,4 +94,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.28.0")
+    implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation("io.coil-kt:coil-gif:2.1.0")
 }

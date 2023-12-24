@@ -80,7 +80,7 @@ fun WagonButton(
                     ),
                 )
                 Text(
-                    text = wagon.owner.name,
+                    text = "Владелец: " + wagon.owner.name,
                     fontSize = 14.sp,
                     modifier = Modifier
                         .padding(
@@ -91,7 +91,7 @@ fun WagonButton(
                 )
 
                 Text(
-                    text = wagon.type,
+                    text = "Тип вагона: " + wagon.type,
                     fontSize = 14.sp,
                     modifier = Modifier
                         .padding(
@@ -102,7 +102,7 @@ fun WagonButton(
                 )
 
                 Text(
-                    text = wagon.operationState,
+                    text = "Состояние: " + wagon.operationState,
                     fontSize = 14.sp,
                     modifier = Modifier
                         .padding(
