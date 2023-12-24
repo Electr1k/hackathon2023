@@ -14,7 +14,6 @@ import com.xyecos.hackathon.data.Resource
 import com.xyecos.hackathon.data.ServerApi
 import com.xyecos.hackathon.data.dto.StationById
 
-
 @Composable
 fun MapScreen(
     api: ServerApi,
@@ -51,7 +50,7 @@ fun MapScreen(
             snippet = "НОВОКУЗНЕЦК-СЕВЕРНЫЙ",
             onClick = {
                 println(stationsA)
-                //navigateToStationById(1);
+                navigateToStationById(1);
                 true}
         )
 
@@ -61,7 +60,7 @@ fun MapScreen(
             snippet = "Томусинская",
             onClick = {
                 println(stationsB)
-                //navigateToStationById(2);
+                navigateToStationById(2);
                 true
             }
         )

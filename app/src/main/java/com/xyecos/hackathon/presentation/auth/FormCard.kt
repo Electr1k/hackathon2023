@@ -29,12 +29,11 @@ fun FormCard(
     modifier: Modifier = Modifier,
     navigationByRoute: (route: String) -> Unit
 ) {
-    val emailValue = mutableStateOf("")
-    val password = mutableStateOf("")
+    val emailValue = mutableStateOf("popovIV@mail.ru")
+    val password = mutableStateOf("qwerty")
     var emailError = mutableStateOf("")
     var passwordError = mutableStateOf("")
 
-    val context = LocalContext.current
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
@@ -108,7 +107,6 @@ fun FormCard(
                                     navigationByRoute(Screen.Stations.route)
                                 }
                                 "dispatcher"->{
-
                                     navigationByRoute(Screen.DetailedStation.route.replace("{$ID}", 1.toString()))
                                 }
                             }

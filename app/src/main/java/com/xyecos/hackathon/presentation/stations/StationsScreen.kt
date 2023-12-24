@@ -54,6 +54,7 @@ import kotlinx.coroutines.flow.filter
 @Composable
 fun StationsScreen(
     navigateToStationById: (id: Int, title: String) -> Unit,
+    navigateToMap: () -> Unit,
     popBack: () -> Unit
 ) {
     var isLoading by remember {
@@ -168,7 +169,7 @@ fun StationsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
-                            .clickable { /*todo*/ },
+                            .clickable { navigateToMap() },
                         colors = CardDefaults.cardColors(
                             containerColor = Color(0xFFFFFFFF),
                         ),

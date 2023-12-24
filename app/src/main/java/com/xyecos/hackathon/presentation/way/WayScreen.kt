@@ -1,27 +1,26 @@
 package com.xyecos.hackathon.presentation.way
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -46,11 +45,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xyecos.hackathon.data.Repo
-import com.xyecos.hackathon.data.Resource
-import com.xyecos.hackathon.data.ServerApi
+import com.xyecos.hackathon.data.dto.Locomotive
 import com.xyecos.hackathon.data.dto.Wagon
 import com.xyecos.hackathon.data.dto.Way
-import com.xyecos.hackathon.di.ApiModule
+import com.xyecos.hackathon.presentation.common.ScreenHeader
+import com.xyecos.hackathon.presentation.common.TopBar
 import com.xyecos.hackathon.presentation.way.locomotives.LocomotiveBox
 import com.xyecos.hackathon.presentation.way.wagons.Direction
 import com.xyecos.hackathon.presentation.way.wagons.WagonButton
@@ -65,7 +64,6 @@ import kotlinx.coroutines.launch
 )
 @Composable
 fun WayScreen(
-    api: ServerApi = ApiModule.provideApi(),
     id: Int,
 ) {
     // Нижний лист для информации о вагоне
@@ -77,7 +75,16 @@ fun WayScreen(
         initialValue = SheetValue.Hidden,
         skipHiddenState = false
     )
+
+    val bottomSheetLocoState = rememberStandardBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        skipHiddenState = false
+    )
+
     val moveSheetState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
+
+    val moveSheetLocoState =
+        rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetLocoState)
 
     var wagons by remember {
         mutableStateOf(listOf<Wagon>())
@@ -108,6 +115,7 @@ fun WayScreen(
     LaunchedEffect(true) {
         infoSheetState.hide()
         moveSheetState.bottomSheetState.hide()
+        moveSheetLocoState.bottomSheetState.hide()
     }
 
     // Установлен ли режим выбора вагонов
@@ -122,65 +130,92 @@ fun WayScreen(
         mutableStateListOf<Wagon>()
     }
 
-
-    var density = LocalDensity.current
-
     // Вагон, информация о котором будет в нижнем листе
     var pickWagon by remember {
         mutableStateOf<Wagon?>(null)
     }
 
+    var pickLoco by remember {
+        mutableStateOf<Locomotive?>(null)
+    }
+
     if (infoSheetState.isVisible) {
-        InfoModalBottomSheet(
+        modalBottomSheet(
             scope = scope,
-            infoSheetState = infoSheetState,
+            sheetState = infoSheetState,
             pickWagon = pickWagon
         )
     }
 
     if (moveSheetState.bottomSheetState.isVisible) {
         MoveModalBottomSheet(
-            scope = scope,
             moveSheetState = moveSheetState,
             selectedList = selectedIdList
         )
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 20.dp),
-        contentPadding = PaddingValues(start = 8.dp, end = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        val wayData = (way as Resource.Success<Way>).data
-        // Рисуем локомотивы, который находятся слева
-        items(wayData.locomotives) {
-            if (it.direction == Direction.LEFT) {
-                LocomotiveBox()
-            }
-        }
-        // Рисуем вагоны
+    if (moveSheetLocoState.bottomSheetState.isVisible) {
+        modalBottomSheetForLoco(
+            sheetState = moveSheetLocoState.bottomSheetState,
+            scope = rememberCoroutineScope(),
+            locomotive = pickLoco
+        )
+    }
 
-        items(wagons) { wagon ->
-            val checkedState = remember { mutableStateOf(false) }
-            AnimatedVisibility(
-                modifier = Modifier.wrapContentSize(),
-                visible = !isLoading,
-                enter = slideInVertically {
-                    // Slide in from 72 dp from the top.
-                    with(density) { -72.dp.roundToPx() }
-                } + expandVertically(
-                    // Expand from the top.
-                    expandFrom = Alignment.Top
-                ) + fadeIn(
-                    // Fade in with the initial alpha of 0.3f.
-                    initialAlpha = 0.3f
-                ),
-                exit = slideOutVertically() + shrinkVertically() + fadeOut()
-            ) {
+    Column {
+        TopBar(extraText = "Путь")
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            item {
+                ScreenHeader(
+                    title = ((("Путь " + way?.name))), {},
+                    isLoading = isLoading,
+                    isWarning = isWarning
+                )
+            }
+
+            // Рисуем локомотивы, который находятся слева
+            items(way?.locomotives ?: emptyList()) {
+                if (it.direction == Direction.LEFT) {
+                    LocomotiveBox(
+                        modifier = Modifier.padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 16.dp
+                        ),
+                        onClick = {
+                            if (!isSelectionMode) {
+                                pickLoco = it
+                                scope.launch {
+                                    moveSheetLocoState.bottomSheetState.expand()
+                                }
+                            }
+                        },
+                        locomotive = it,
+                    )
+                }
+            }
+
+            items(wagons) { wagon ->
+                val warn = wagon.isDirty || wagon.isSick
+
+                if (isWarning != wagon.isDirty || wagon.isSick) {
+                    isWarning = wagon.isDirty || wagon.isSick
+                }
+
+                val checkedState = remember { mutableStateOf(false) }
+
                 WagonButton(
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp
+                    ),
+                    isWarning = warn,
                     wagon = wagon,
                     onClick = {
                         if (!isSelectionMode) {
@@ -235,80 +270,238 @@ fun WayScreen(
                     }
                 )
             }
-        }
-        // Рисуем локомотивы, который находятся слева
-        items(wayData.locomotives) {
-            if (it.direction == Direction.RIGHT) {
-                LocomotiveBox()
+            // Рисуем локомотивы, который находятся слева
+            items(way?.locomotives ?: emptyList()) {
+                if (it.direction == Direction.RIGHT) {
+                    LocomotiveBox(
+                        modifier = Modifier.padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 16.dp,
+                            bottom = 32.dp
+                        ),
+                        onClick = {},
+                        locomotive = it,
+                    )
+                }
             }
-        }
-        if (wayData.wagonsCount + wayData.locomotives.size == 0) {
-            item {
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    text = "Путь свободен",
-                    fontSize = 24.sp,
-                    fontWeight = W600,
-                    color = Color(0xFF0B2C62)
-                )
+            if ((way?.wagonsCount ?: 0) + (way?.locomotives?.size ?: 0) == 0) {
+                item {
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        text = "Путь свободен",
+                        fontSize = 24.sp,
+                        fontWeight = W600,
+                        color = Color(0xFF0B2C62)
+                    )
+                }
             }
         }
     }
 }
 
-/**
- * param [scope] - coroutineScope
- * param [infoSheetState] - state for this bottom sheet
- * pickWagon - selected Wagon
- * */
+@Composable
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable()
-fun InfoModalBottomSheet(
+private fun modalBottomSheet(
+    sheetState: SheetState,
     scope: CoroutineScope,
-    infoSheetState: SheetState,
-    pickWagon: Wagon?,
+    pickWagon: Wagon?
 ) {
     ModalBottomSheet(
-        containerColor = Color(0XFFFCB53B),
-        contentColor = Color.White,
-        sheetState = infoSheetState,
+        modifier = Modifier,
+        containerColor = Color.White,
+        sheetState = sheetState,
+        dragHandle = {},
+        windowInsets = WindowInsets(top = 0.dp),
+        shape = RoundedCornerShape(0.dp),
+        scrimColor = Color.Transparent,
+        tonalElevation = 8.dp,
         onDismissRequest = {
             scope.launch {
-                infoSheetState.hide()
+                sheetState.hide()
             }
         },
     ) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-        ) {
-            if (pickWagon != null) {
-                Text(
-                    text = "Вагон № ${pickWagon!!.inventoryNumber}",
-                    fontSize = 18.sp,
-                    fontWeight = W500
-                )
-                Text(
-                    text = "Простой по станции ${pickWagon!!.idleDaysLength} дней",
-                    fontSize = 18.sp,
-                    fontWeight = W500
-                )
-                Text(
-                    text = "Собственник № ${pickWagon!!.owner}",
-                    fontSize = 18.sp,
-                    fontWeight = W500
-                )
-                Spacer(modifier = Modifier.height(25.dp))
+        Column() {
+            Box(
+                modifier = Modifier
+                    .background(color = Color(0xfffcb53b))
+                    .fillMaxWidth()
+                    .width(2.dp)
+                    .padding(bottom = 4.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                if (pickWagon != null) {
+                    Text(
+                        text = "Вагон № ${pickWagon.inventoryNumber}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "ID в системе - ${pickWagon.inventoryNumber}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Простой на станции ${pickWagon.idleDaysLength} дней",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Собственник - ${pickWagon.owner}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Тип - ${pickWagon.type}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Состояние - ${pickWagon.operationState}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Дней до обслуживания - ${pickWagon.daysToRepair}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Грузоподъёмность - ${pickWagon.loadCapacity}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Груз - ${pickWagon.cargo}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Осталось км. - ${pickWagon.kilometersLeft}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Наличие люка - ${if (pickWagon.isWithHatch) "Есть" else "Нет"}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Грязный - ${if (pickWagon.isDirty) "Да" else "Нет"}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Сломан - ${if (pickWagon.isSick) "Да" else "Нет"}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Дополнительная информация 1 - ${pickWagon.note1}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+                    Text(
+                        text = "Дополнительная информация 2 - ${pickWagon.note2}",
+                        fontSize = 18.sp,
+                        fontWeight = W500
+                    )
+
+                    OutlinedButton(
+                        onClick = {/*todo*/ },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top=16.dp, bottom = 32.dp)
+                            .height(50.dp)
+                        ,
+                        border = BorderStroke(2.dp, Color.Black),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = "Выполнить операцию",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = Color.Black,
+                        )
+                    }
+                }
             }
         }
     }
 }
+
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun modalBottomSheetForLoco(
+    sheetState: SheetState,
+    scope: CoroutineScope,
+    locomotive: Locomotive?
+) {
+    ModalBottomSheet(
+        modifier = Modifier,
+        containerColor = Color.White,
+        sheetState = sheetState,
+        dragHandle = {},
+        windowInsets = WindowInsets(top = 0.dp),
+        shape = RoundedCornerShape(0.dp),
+        scrimColor = Color.Transparent,
+        tonalElevation = 8.dp,
+        onDismissRequest = {
+            scope.launch {
+                sheetState.hide()
+            }
+        },
+    ) {
+        Column() {
+            Box(
+                modifier = Modifier
+                    .background(color = Color(0xfffcb53b))
+                    .fillMaxWidth()
+                    .width(2.dp)
+                    .padding(bottom = 4.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                OutlinedButton(
+                    onClick = {/*todo*/ },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top=16.dp, bottom = 32.dp)
+                        .height(50.dp)
+                    ,
+                    border = BorderStroke(2.dp, Color.Black),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = "Выполнить операцию",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = Color.Black,
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable()
 fun MoveModalBottomSheet(
-    scope: CoroutineScope,
     moveSheetState: BottomSheetScaffoldState,
     selectedList: MutableList<Int>,
 ) {

@@ -42,13 +42,19 @@ fun NavigationGraph(
         }
     }
 
-    NavHost(navController = navController, startDestination = Screen.Splash.route, route = ROOT_ROUTE){
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Splash.route,
+        route = ROOT_ROUTE
+    ) {
 
-        composable(route = Screen.Splash.route){
+        composable(route = Screen.Splash.route) {
             SplashScreen(openApp = {
-                navigateByRoute(route = Screen.Login.route,
+                navigateByRoute(
+                    route = Screen.Login.route,
                     popUpRoute = Screen.Splash.route,
-                    isInclusive = true)
+                    isInclusive = true
+                )
             })
         }
 
@@ -58,10 +64,12 @@ fun NavigationGraph(
             StationsScreen(
                 navigateToStationById = { id, title ->
                     navigateByRoute(
-                        Screen.DetailedStation.route.replace("{$ID}", id.toString()).replace("{$TITLE}", title),
+                        Screen.DetailedStation.route.replace("{$ID}", id.toString())
+                            .replace("{$TITLE}", title),
                         null
                     )
                 },
+                navigateToMap = { navigateByRoute(Screen.Map.route, null) },
                 popBack = { popBackStack() }
             )
         }
@@ -72,15 +80,16 @@ fun NavigationGraph(
                 navArgument(ID) { type = NavType.IntType },
                 navArgument(TITLE) { type = NavType.StringType }
             )
-        ){
-            backStackEntry ->
+        ) { backStackEntry ->
             DetailedStationScreen(
                 api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
-                navigationToPark = {id -> navigateByRoute(
-                    Screen.Park.route.replace("{$ID}", id.toString()),
-                    null
-                )},
+                navigationToPark = { id ->
+                    navigateByRoute(
+                        Screen.Park.route.replace("{$ID}", id.toString()),
+                        null
+                    )
+                },
             )
         }
 
@@ -89,14 +98,15 @@ fun NavigationGraph(
             arguments = listOf(
                 navArgument(ID) { type = NavType.IntType },
             )
-        ){
-            backStackEntry ->
+        ) { backStackEntry ->
             ParkScreen(
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
-                navigationToWay = {id -> navigateByRoute(
-                    Screen.Way.route.replace("{$ID}", id.toString()),
-                    null
-                )},
+                navigationToWay = { id ->
+                    navigateByRoute(
+                        Screen.Way.route.replace("{$ID}", id.toString()),
+                        null
+                    )
+                },
             )
         }
 
@@ -105,23 +115,24 @@ fun NavigationGraph(
             arguments = listOf(
                 navArgument(ID) { type = NavType.IntType },
             )
-        ){
-                backStackEntry ->
+        ) { backStackEntry ->
             WayScreen(
-                api = api,
                 id = backStackEntry.arguments?.getInt(ID) ?: -1,
             )
         }
-        composable(route = Screen.Map.route){
+        composable(route = Screen.Map.route) {
             MapScreen(
                 api = api,
                 navigateToStationById = { id ->
-                    navigateByRoute(Screen.DetailedStation.route.replace("{$ID}", id.toString()),
-                        null)})
+                    navigateByRoute(
+                        Screen.DetailedStation.route.replace("{$ID}", id.toString()),
+                        null
+                    )
+                })
         }
 
-        composable(route = Screen.Login.route){
-            MainLoginScreenContent(navigationByRoute = {route -> navigateByRoute(route, null)})
+        composable(route = Screen.Login.route) {
+            MainLoginScreenContent(navigationByRoute = { route -> navigateByRoute(route, null) })
         }
     }
 }

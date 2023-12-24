@@ -109,7 +109,7 @@ fun DetailedStationScreen(
 
                     CustomBox(
                         modifier = Modifier.padding(
-                            start = 16.dp, end = 16.dp, top = 16.dp
+                            start = 16.dp, end = 16.dp, bottom = 16.dp
                         ),
                         text = data.name,
                         onClick = { navigationToPark(data.id) },

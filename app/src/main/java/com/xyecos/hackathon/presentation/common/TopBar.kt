@@ -38,7 +38,7 @@ fun TopBar(
             modifier = Modifier
                 .padding(top = 32.dp, bottom = 16.dp, start = 16.dp)
                 .fillMaxWidth(),
-            text = "SYBER LOGIC" + if (extraText != null) " - $extraText" else "",
+            text = "CYBER LOGIC" + if (extraText != null) " - $extraText" else "",
             color = Color.White,
             style = TextStyle(
                 fontSize = 18.sp,
